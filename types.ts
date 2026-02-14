@@ -1,6 +1,7 @@
 export interface Character {
   id: string;
   name: string;
+  gender: 'Male' | 'Female';
   relation: string; // e.g., 'Mom', 'Best Friend'
   traits: string;
   description: string;

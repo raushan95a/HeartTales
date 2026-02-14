@@ -15,6 +15,8 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [isPlayingAll, setIsPlayingAll] = useState(false);
   
+  // Cache to store audio promises
+  const audioCache = useRef<Map<string, Promise<string>>>(new Map());
   // Ref to track if we should stop the sequence
   const isPlayingAllRef = useRef(false);
 
@@ -23,13 +25,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
     let isMounted = true;
 
     const generateMissingImages = async () => {
-      // Find scenes that don't have images and aren't currently generating
       const scenesToGenerate = story.scenes.filter(s => !s.imageUrl && !s.isGeneratingImage);
 
       for (const scene of scenesToGenerate) {
         if (!isMounted) break;
 
-        // Mark as generating in UI immediately
         const storyWithLoading = {
             ...story,
             scenes: story.scenes.map(s => s.id === scene.id ? { ...s, isGeneratingImage: true } : s)
@@ -37,12 +37,10 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
         onUpdateStory(storyWithLoading);
 
         try {
-          // Generate
           const base64Image = await generateSceneImage(scene.visual_description);
           
           if (!isMounted) break;
 
-          // Save result
           const updatedStory = {
             ...story,
             scenes: story.scenes.map(s => 
@@ -54,7 +52,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
           onUpdateStory(updatedStory);
         } catch (error) {
           console.error(`Failed to auto-generate image for scene ${scene.id}`, error);
-          // Revert loading state on error
           const revertedStory = {
             ...story,
             scenes: story.scenes.map(s => s.id === scene.id ? { ...s, isGeneratingImage: false } : s)
@@ -64,50 +61,51 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
       }
     };
 
-    // Trigger only if we have scenes to process to avoid loops
     if (story.scenes.some(s => !s.imageUrl && !s.isGeneratingImage)) {
         generateMissingImages();
     }
 
     return () => { isMounted = false; };
-  }, [story.id]); // Only run when story ID changes (initial load)
+  }, [story.id]); 
 
-  const handleGenerateImage = async (scene: Scene) => {
-    // Keep manual trigger just in case auto fails or for retries
-    if (generatingSceneId) return;
-    setGeneratingSceneId(scene.id);
-    
-    // ... (Existing logic managed by useEffect mostly, but keeping for retry)
-    try {
-      const base64Image = await generateSceneImage(scene.visual_description);
-      const updatedStory = {
-        ...story,
-        scenes: story.scenes.map(s => 
-          s.id === scene.id ? { ...s, imageUrl: base64Image, isGeneratingImage: false } : s
-        )
-      };
-      onUpdateStory(updatedStory);
-    } catch (error) {
-       console.error("Failed to generate image", error);
-    } finally {
-      setGeneratingSceneId(null);
+  // Determine appropriate voice
+  const getVoiceForSpeaker = (speakerName: string): string => {
+    // Check if it's "Me" or a known character
+    if (speakerName.toLowerCase() === 'me' || speakerName.toLowerCase() === 'i') {
+        return 'Zephyr'; // Default soft male voice for user, could be randomized or configured
     }
+
+    const character = story.characters.find(c => c.name.toLowerCase() === speakerName.toLowerCase());
+    if (character && character.voice) return character.voice;
+    
+    // If character found but no voice (legacy) or unknown speaker, infer from gender if possible or fallback
+    if (character) {
+        if (character.gender === 'Female') return 'Kore';
+        return 'Zephyr';
+    }
+
+    return 'Zephyr'; // Fallback
+  };
+
+  const getAudio = (text: string, speaker: string, key: string): Promise<string> => {
+    if (audioCache.current.has(key)) {
+        return audioCache.current.get(key)!;
+    }
+    const voice = getVoiceForSpeaker(speaker);
+    const promise = generateSpeech(text, voice).catch(e => {
+        audioCache.current.delete(key); // Remove failed promise
+        throw e;
+    });
+    audioCache.current.set(key, promise);
+    return promise;
   };
 
   const playSingleAudio = async (text: string, speakerName: string, audioKey: string) => {
      try {
         setPlayingAudioId(audioKey);
         
-        // Find character to get voice
-        const character = story.characters.find(c => c.name === speakerName);
+        const base64Audio = await getAudio(text, speakerName, audioKey);
         
-        // Use 'Zephyr' (Soft Male) or 'Kore' (Soft Female) as defaults instead of Puck/Fenrir
-        const defaultVoice = 'Zephyr'; 
-        const voice = character?.voice || defaultVoice;
-
-        const base64Audio = await generateSpeech(text, voice);
-        
-        // This promise resolves when audio finishes playing
         await new Promise<void>(async (resolve) => {
             const source = await playAudioData(base64Audio);
             if (source) {
@@ -125,7 +123,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
 
   const handlePlayAllStory = async () => {
     if (isPlayingAll) {
-        // Stop
         isPlayingAllRef.current = false;
         setIsPlayingAll(false);
         return;
@@ -148,21 +145,34 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
         });
     });
 
-    for (const item of playlist) {
+    // Start playing loop
+    for (let i = 0; i < playlist.length; i++) {
         if (!isPlayingAllRef.current) break;
 
-        // 1. Scroll into view
+        const item = playlist[i];
+
+        // 1. Buffer ahead: ensure next 2 items are fetching
+        if (i + 1 < playlist.length) {
+            const next = playlist[i+1];
+            getAudio(next.text, next.speaker, next.id);
+        }
+        if (i + 2 < playlist.length) {
+            const nextNext = playlist[i+2];
+            getAudio(nextNext.text, nextNext.speaker, nextNext.id);
+        }
+
+        // 2. Scroll into view
         const element = document.getElementById(item.elementId);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        // 2. Play Audio (Wait for it to finish)
+        // 3. Play Audio (Wait for fetch + playback)
         await playSingleAudio(item.text, item.speaker, item.id);
         
-        // Small pause between lines
+        // Small pause
         if (isPlayingAllRef.current) {
-            await new Promise(r => setTimeout(r, 500)); 
+            await new Promise(r => setTimeout(r, 300)); 
         }
     }
 
@@ -240,21 +250,22 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack, onUpdat
                         {scene.dialogue.map((d, i) => {
                             const audioKey = `${sceneIndex}-${i}`;
                             const isPlaying = playingAudioId === audioKey;
-                            
+                            const isMe = d.speaker.toLowerCase() === 'me' || d.speaker.toLowerCase() === 'i';
+
                             return (
                                 <div 
                                     id={`dialogue-${sceneIndex}-${i}`}
                                     key={i} 
-                                    className={`flex flex-col transition-all duration-500 ${i % 2 === 0 ? 'items-start' : 'items-end'}`}
+                                    className={`flex flex-col transition-all duration-500 ${isMe ? 'items-end' : 'items-start'}`}
                                 >
-                                    <div className="flex items-end gap-2 max-w-full">
+                                    <div className={`flex items-end gap-2 max-w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                         {/* Bubble */}
                                         <div className={`
                                             relative px-6 py-4 rounded-3xl border-2 shadow-sm transition-all duration-300
                                             ${isPlaying ? 'border-indigo-500 ring-2 ring-indigo-200 scale-105 z-10' : 'border-slate-900'}
-                                            ${i % 2 === 0 
-                                                ? 'bg-white rounded-bl-none ml-2' 
-                                                : 'bg-indigo-50 rounded-br-none mr-2'}
+                                            ${isMe 
+                                                ? 'bg-indigo-50 rounded-br-none mr-2' 
+                                                : 'bg-white rounded-bl-none ml-2'}
                                         `}>
                                             <p className="text-xs font-black text-slate-400 mb-1 uppercase tracking-wider">{d.speaker}</p>
                                             <p className="font-comic text-lg text-slate-900 leading-tight">

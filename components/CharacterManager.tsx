@@ -16,6 +16,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
   // Form State
   const [formData, setFormData] = useState<Partial<Character>>({
     name: '',
+    gender: 'Female',
     relation: 'Friend',
     traits: '',
     description: '',
@@ -26,6 +27,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
   const resetForm = () => {
     setFormData({
       name: '',
+      gender: 'Female',
       relation: 'Friend',
       traits: '',
       description: '',
@@ -37,7 +39,10 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
   };
 
   const handleEdit = (char: Character) => {
-    setFormData(char);
+    setFormData({
+        ...char,
+        gender: char.gender || 'Female' // Handle legacy data
+    });
     setEditingId(char.id);
     setIsAdding(true);
   };
@@ -106,17 +111,30 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Relation</label>
-                <select
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                  value={formData.relation}
-                  onChange={e => setFormData({ ...formData, relation: e.target.value })}
-                >
-                  {RELATION_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Relation</label>
+                    <select
+                        className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                        value={formData.relation}
+                        onChange={e => setFormData({ ...formData, relation: e.target.value })}
+                    >
+                        {RELATION_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Gender</label>
+                    <select
+                        className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                        value={formData.gender}
+                        onChange={e => setFormData({ ...formData, gender: e.target.value as 'Male' | 'Female' })}
+                    >
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                    </select>
+                  </div>
               </div>
             </div>
 

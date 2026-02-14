@@ -12,24 +12,35 @@ export const generateStoryFromPrompt = async (
 ): Promise<Omit<Story, 'id' | 'createdAt'>> => {
   if (!apiKey) throw new Error("API Key is missing");
 
+  // Format characters for the prompt
   const characterDescriptions = characters
-    .map(c => `${c.name} (${c.relation}): ${c.traits}. ${c.description}`)
+    .map(c => `- ${c.name} (${c.relation}, ${c.gender}): ${c.traits}. ${c.description}`)
     .join('\n');
+
+  // Explicitly add 'Me' to the context
+  const inputContext = `
+  CHARACTERS:
+  1. "Me" (The User/Protagonist): The main character. Gender: Neutral/User's choice.
+  ${characterDescriptions}
+
+  USER STORY IDEA:
+  ${prompt}
+  `;
 
   const model = "gemini-3-flash-preview";
   
   // DRACONIAN instructions to keep it short and valid JSON.
   const systemInstruction = `You are a strict JSON Data Generator API. 
-  You do not write novels. You output data.
   
-  Task: Generate a 3-scene comic story based on the input.
+  Task: Generate a 3-scene comic story where "Me" (the user) interacts with the provided characters.
   
   CONSTRAINTS:
   1. Output raw JSON only. No markdown formatting.
-  2. "visual_description": MAX 15 words.
+  2. "visual_description": MAX 15 words. Describe the scene visually.
   3. "narration": MAX 10 words.
   4. "dialogue": MAX 2 items per scene. Text MAX 10 words.
   5. TOTAL SCENES: Exactly 3.
+  6. Ensure "Me" is an active participant in the story.
   
   JSON Schema:
   {
@@ -44,16 +55,13 @@ export const generateStoryFromPrompt = async (
     ]
   }`;
 
-  const userPrompt = `Input Characters:\n${characterDescriptions}\n\nStory Context: ${prompt}`;
-
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: userPrompt,
+      contents: inputContext,
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        // Limit output tokens to prevent runaway generation, but allow enough for valid JSON
         maxOutputTokens: 4000, 
         responseSchema: {
           type: Type.OBJECT,
@@ -162,7 +170,7 @@ export const generateSceneImage = async (visualDescription: string): Promise<str
   }
 };
 
-export const generateSpeech = async (text: string, voiceName: string = 'Puck'): Promise<string> => {
+export const generateSpeech = async (text: string, voiceName: string = 'Zephyr'): Promise<string> => {
   if (!apiKey) throw new Error("API Key is missing");
 
   const model = "gemini-2.5-flash-preview-tts";
