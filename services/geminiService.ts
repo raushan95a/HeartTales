@@ -274,6 +274,65 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   }
 };
 
+export const generateCharacterResponse = async (
+  character: Character,
+  userProfile: UserProfile,
+  chatHistory: { role: string; text: string }[],
+  userMessage: string
+): Promise<string> => {
+  if (!apiKey) throw new Error("API Key is missing");
+
+  const model = "gemini-2.5-flash";
+
+  const systemInstruction = `You are roleplaying as a character in a conversation. Stay COMPLETELY in character at all times.
+
+CHARACTER YOU ARE PLAYING:
+- Name: ${character.name}
+- Gender: ${character.gender}
+- Relationship to the user: ${character.relation}
+- Personality traits: ${character.traits}
+- Description: ${character.description}
+
+THE USER TALKING TO YOU:
+- Name: ${userProfile.name}
+- Gender: ${userProfile.gender}
+
+RULES:
+1. Respond as ${character.name} would, based on their personality traits and relationship.
+2. Keep responses conversational and natural, like a real video call.
+3. Keep responses concise — 1-3 sentences max, like natural speech.
+4. Show emotion and personality consistent with the character traits.
+5. Address the user by their name (${userProfile.name}) occasionally.
+6. Never break character or mention being an AI.`;
+
+  // Build conversation history for context
+  const historyParts = chatHistory.map(msg => ({
+    role: msg.role === 'user' ? 'user' as const : 'model' as const,
+    parts: [{ text: msg.text }]
+  }));
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: [
+        ...historyParts,
+        { role: 'user' as const, parts: [{ text: userMessage }] }
+      ],
+      config: {
+        systemInstruction,
+        maxOutputTokens: 200,
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    return text.trim();
+  } catch (error) {
+    console.error("Error generating character response:", error);
+    throw error;
+  }
+};
+
 // Helper to decode base64 to Uint8Array
 function decode(base64: string) {
   const binaryString = atob(base64);
