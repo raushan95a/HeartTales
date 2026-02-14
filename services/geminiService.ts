@@ -199,30 +199,45 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
 
   const model = "gemini-2.5-flash-preview-tts";
 
-  try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: { parts: [{ text }] },
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName }
+  const callApi = async (attempt = 1): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+        model,
+        contents: { parts: [{ text }] },
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: {
+                prebuiltVoiceConfig: { voiceName }
+                },
             },
         },
-      },
-    });
+        });
 
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-        const parts = candidates[0].content.parts;
-        for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-                return part.inlineData.data;
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0) {
+            const parts = candidates[0].content.parts;
+            for (const part of parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return part.inlineData.data;
+                }
             }
         }
+        throw new Error("No audio data found");
+    } catch (e: any) {
+        // Retry on 429 (Quota) or 503 (Service Unavailable)
+        if (attempt < 4 && (e.message?.includes('429') || e.message?.includes('503') || e.status === 429 || e.status === 503)) {
+            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.warn(`Speech generation rate limited (attempt ${attempt}). Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return callApi(attempt + 1);
+        }
+        throw e;
     }
-    throw new Error("No audio data found");
+  };
+
+  try {
+    return await callApi();
   } catch (error) {
     console.error("Error generating speech:", error);
     throw error;

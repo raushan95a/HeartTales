@@ -114,29 +114,52 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
       setStatusText("Scenes drawn! Now recording voice actors...");
       setProgress(70);
 
-      // 3. Generate Audio for ALL dialogues
-      const allDialoguesCount = scenesWithImages.reduce((acc, s) => acc + s.dialogue.length, 0);
+      // 3. Generate Audio for ALL dialogues SEQUENTIALLY to avoid 429 Rate Limits
+      
+      // Create a deep copy of scenes to update
+      const scenesWithAudio = JSON.parse(JSON.stringify(scenesWithImages));
+      
+      // Flatten the list of dialogues to process them one by one
+      interface DialogueTask {
+          sceneIdx: number;
+          dialogueIdx: number;
+          text: string;
+          speaker: string;
+      }
+      
+      const tasks: DialogueTask[] = [];
+      scenesWithAudio.forEach((scene: Scene, sIdx: number) => {
+          scene.dialogue.forEach((d: any, dIdx: number) => {
+              tasks.push({ sceneIdx: sIdx, dialogueIdx: dIdx, text: d.text, speaker: d.speaker });
+          });
+      });
+
+      const allDialoguesCount = tasks.length;
       let completedAudio = 0;
 
-      const scenesWithAudio = await Promise.all(scenesWithImages.map(async (scene) => {
-          const dialogueWithAudio = await Promise.all(scene.dialogue.map(async (d) => {
-              try {
-                  const voice = determineVoice(d.speaker, selectedChars, userProfile);
-                  const audioB64 = await generateSpeech(d.text, voice);
-                  
-                  completedAudio++;
-                  // Allocate 25% of bar to audio
-                  const audioProgress = (completedAudio / allDialoguesCount) * 25;
-                  setProgress(70 + audioProgress);
-                  
-                  return { ...d, audioData: audioB64 };
-              } catch (e) {
-                  console.error(`Failed audio for ${d.speaker}`, e);
-                  return d;
+      for (const task of tasks) {
+          try {
+              const voice = determineVoice(task.speaker, selectedChars, userProfile);
+              
+              // Add a small delay between requests to respect rate limits
+              if (completedAudio > 0) {
+                  await new Promise(r => setTimeout(r, 1000));
               }
-          }));
-          return { ...scene, dialogue: dialogueWithAudio };
-      }));
+
+              const audioB64 = await generateSpeech(task.text, voice);
+              
+              // Update the specific dialogue in the structure
+              scenesWithAudio[task.sceneIdx].dialogue[task.dialogueIdx].audioData = audioB64;
+          } catch (e) {
+              console.error(`Failed audio for ${task.speaker} at scene ${task.sceneIdx}`, e);
+              // We just skip adding audioData, user will see text without audio
+          } finally {
+              completedAudio++;
+              // Allocate 25% of bar to audio
+              const audioProgress = (completedAudio / allDialoguesCount) * 25;
+              setProgress(70 + audioProgress);
+          }
+      }
       
       setStatusText("Finalizing your book...");
       setProgress(100);
