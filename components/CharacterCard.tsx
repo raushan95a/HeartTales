@@ -22,26 +22,26 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   return (
     <div 
       className={`
-        relative group rounded-xl p-4 border-2 transition-all duration-200 bg-white
+        relative group rounded-2xl p-5 border-2 transition-all duration-300 bg-white
         ${selectable 
-          ? 'cursor-pointer hover:border-indigo-300' 
-          : 'hover:shadow-md border-slate-100'}
-        ${selected ? 'border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50' : ''}
+          ? 'cursor-pointer hover:border-rose-300 hover:shadow-lg hover:-translate-y-1' 
+          : 'hover:shadow-lg hover:-translate-y-1 border-slate-100'}
+        ${selected ? 'border-rose-400 ring-2 ring-rose-100 bg-gradient-to-br from-rose-50 to-white shadow-lg -translate-y-1' : ''}
       `}
       onClick={() => selectable && onToggleSelect && onToggleSelect(character.id)}
     >
       <div className="flex items-start space-x-4">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner ${character.avatarColor}`}>
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-md ${character.avatarColor} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
           {character.name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-slate-800 truncate">{character.name}</h3>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">{character.relation}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{character.relation}</p>
           <p className="text-sm text-slate-600 line-clamp-2">{character.description}</p>
           
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {character.traits.split(',').map((trait, i) => (
-              <span key={i} className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs border border-slate-200">
+              <span key={i} className="inline-block px-2.5 py-0.5 rounded-full bg-slate-50 text-slate-600 text-xs font-medium border border-slate-100">
                 {trait.trim()}
               </span>
             ))}
@@ -54,7 +54,7 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
           {onEdit && (
             <button 
               onClick={(e) => { e.stopPropagation(); onEdit(character); }}
-              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"
+              className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md"
             >
               <Edit2 className="w-4 h-4" />
             </button>
@@ -71,8 +71,8 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       )}
       
       {selectable && selected && (
-        <div className="absolute top-4 right-4">
-           <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+        <div className="absolute top-4 right-4 animate-fade-in">
+           <div className="w-7 h-7 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full flex items-center justify-center shadow-md">
              <User className="w-4 h-4 text-white" />
            </div>
         </div>

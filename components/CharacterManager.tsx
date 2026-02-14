@@ -3,6 +3,7 @@ import { Character, AVATAR_COLORS, RELATION_OPTIONS, VOICE_OPTIONS } from '../ty
 import { CharacterCard } from './CharacterCard';
 import { Button } from './Button';
 import { Plus, X, Save, User, Mic } from 'lucide-react';
+import { Dropdown } from './Dropdown';
 
 interface CharacterManagerProps {
   characters: Character[];
@@ -78,7 +79,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Your Characters</h2>
+          <h2 className="text-3xl font-bold text-slate-900 font-display">Your Characters</h2>
           <p className="text-slate-500 mt-1">Manage the cast for your stories.</p>
         </div>
         {!isAdding && (
@@ -89,7 +90,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
       </div>
 
       {isAdding && (
-        <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-6 mb-8 animate-fade-in">
+        <div className="soft-card p-6 mb-8 animate-fade-in">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-slate-800">{editingId ? 'Edit Character' : 'New Character'}</h3>
             <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
@@ -104,7 +105,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
                 <input
                   type="text"
                   required
-                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="input-shell"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Grandma Rose"
@@ -114,26 +115,19 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
               <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Relation</label>
-                    <select
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                        value={formData.relation}
-                        onChange={e => setFormData({ ...formData, relation: e.target.value })}
-                    >
-                        {RELATION_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                    </select>
+                    <Dropdown
+                      value={formData.relation || 'Friend'}
+                      options={RELATION_OPTIONS}
+                      onChange={v => setFormData({ ...formData, relation: v })}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Gender</label>
-                    <select
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                        value={formData.gender}
-                        onChange={e => setFormData({ ...formData, gender: e.target.value as 'Male' | 'Female' })}
-                    >
-                        <option value="Female">Female</option>
-                        <option value="Male">Male</option>
-                    </select>
+                    <Dropdown
+                      value={formData.gender || 'Female'}
+                      options={['Female', 'Male']}
+                      onChange={v => setFormData({ ...formData, gender: v as 'Male' | 'Female' })}
+                    />
                   </div>
               </div>
             </div>
@@ -143,7 +137,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
                 <label className="block text-sm font-medium text-slate-700 mb-2">Traits (comma separated)</label>
                 <input
                     type="text"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="input-shell"
                     value={formData.traits}
                     onChange={e => setFormData({ ...formData, traits: e.target.value })}
                     placeholder="e.g. Funny, Brave, Loves cats"
@@ -151,18 +145,12 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Voice</label>
-                    <div className="relative">
-                        <Mic className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                        <select
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                        value={formData.voice}
-                        onChange={e => setFormData({ ...formData, voice: e.target.value })}
-                        >
-                        {VOICE_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                        </select>
-                    </div>
+                    <Dropdown
+                      value={formData.voice || 'Puck'}
+                      options={VOICE_OPTIONS}
+                      onChange={v => setFormData({ ...formData, voice: v })}
+                      icon={<Mic className="w-4 h-4" />}
+                    />
                 </div>
             </div>
 
@@ -171,7 +159,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
               <textarea
                 required
                 rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                className="textarea-shell resize-none"
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Briefly describe their appearance and personality..."
@@ -202,7 +190,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters, 
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {characters.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+          <div className="col-span-full text-center py-12 soft-card border-2 border-dashed border-slate-200">
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="w-8 h-8" />
             </div>

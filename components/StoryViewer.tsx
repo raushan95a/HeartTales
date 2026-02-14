@@ -87,9 +87,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
   const userName = story.userProfile?.name || 'Me';
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 bg-slate-50">
-      <div className="mb-8 flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-sm z-20 py-4 border-b border-slate-200 shadow-sm px-4 -mx-4">
-        <button onClick={onBack} className="text-sm font-bold text-slate-700 hover:text-indigo-600 flex items-center transition-colors">
+        <div className="max-w-5xl mx-auto py-8 px-4">
+            <div className="mb-8 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-sm z-20 py-4 border-b border-slate-200 shadow-sm px-4 -mx-4">
+                <button onClick={onBack} className="text-sm font-bold text-slate-700 hover:text-rose-500 flex items-center transition-colors">
            <ArrowLeft className="w-5 h-5 mr-1" /> BACK
         </button>
         
@@ -98,7 +98,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
                 variant={isPlayingAll ? "danger" : "primary"}
                 onClick={handlePlayAllStory}
                 icon={isPlayingAll ? <StopCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
-                className={isPlayingAll ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-200" : "bg-indigo-600 text-white hover:bg-indigo-700"}
             >
                 {isPlayingAll ? "Stop Reading" : "Read Story"}
             </Button>
@@ -106,20 +105,20 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
       </div>
 
       <div className="text-center mb-16 animate-fade-in-up">
-        <h1 className="text-5xl font-extrabold text-slate-900 mb-6 font-comic tracking-tight uppercase">{story.title}</h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto italic font-serif leading-relaxed border-t-2 border-b-2 border-slate-200 py-4">{story.synopsis}</p>
+                <h1 className="text-5xl font-extrabold text-slate-900 mb-6 font-display tracking-tight uppercase">{story.title}</h1>
+                <p className="text-xl text-slate-600 max-w-2xl mx-auto italic leading-relaxed border-t-2 border-b-2 border-slate-200 py-4">{story.synopsis}</p>
       </div>
 
-      <div className="space-y-16">
+      <div className="space-y-20">
         {story.scenes.map((scene, sceneIndex) => (
-          <div key={scene.id} className="bg-white rounded-none border-4 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+          <div key={scene.id} className="comic-panel flex flex-col md:flex-row min-h-[500px] animate-fade-in-up" style={{ animationDelay: `${sceneIndex * 0.15}s` }}>
             
             {/* Manga Visual Panel */}
-            <div className="md:w-3/5 bg-slate-100 relative min-h-[400px] flex items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-slate-900">
+            <div className="md:w-3/5 bg-slate-100 relative min-h-[400px] flex items-center justify-center border-b-4 md:border-b-0 md:border-r-3 border-slate-900 overflow-hidden">
               {scene.imageUrl ? (
-                <div className="relative w-full h-full group animate-in fade-in duration-700">
-                    <img src={scene.imageUrl} alt={scene.visual_description} className="w-full h-full object-cover grayscale contrast-125 brightness-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                <div className="relative w-full h-full group">
+                    <img src={scene.imageUrl} alt={scene.visual_description} className="w-full h-full object-cover grayscale contrast-125 brightness-110 transition-all duration-700 group-hover:grayscale-0 group-hover:contrast-100" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none"></div>
                 </div>
               ) : (
                 <div className="p-12 text-center text-slate-400">Image not available</div>
@@ -159,11 +158,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
                                 >
                                     <div className={`flex items-end gap-2 max-w-full ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                         <div className={`
-                                            relative px-6 py-4 rounded-3xl border-2 shadow-sm transition-all duration-300
-                                            ${isPlaying ? 'border-indigo-500 ring-2 ring-indigo-200 scale-105 z-10' : 'border-slate-900'}
+                                            dialogue-bubble shadow-sm
+                                            ${isPlaying ? 'is-playing' : ''}
                                             ${isMe 
-                                                ? 'bg-indigo-50 rounded-br-none mr-2' 
-                                                : 'bg-white rounded-bl-none ml-2'}
+                                                ? 'dialogue-bubble-me mr-2' 
+                                                : 'dialogue-bubble-other ml-2'}
                                         `}>
                                             <p className="text-xs font-black text-slate-400 mb-1 uppercase tracking-wider">{d.speaker}</p>
                                             <p className="font-comic text-lg text-slate-900 leading-tight">
@@ -174,10 +173,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
                                         {d.audioData && (
                                             <button 
                                                 onClick={() => playSingleAudio(d.audioData, audioKey)}
-                                                className={`
-                                                    mb-1 p-2 rounded-full transition-colors
-                                                    ${isPlaying ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400 hover:text-indigo-600'}
-                                                `}
+                                                className={`audio-btn mb-1 ${isPlaying ? 'is-playing' : ''}`}
                                                 disabled={playingAudioId !== null}
                                             >
                                                 {isPlaying ? (

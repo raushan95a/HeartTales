@@ -3,15 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StoryVerse AI</title>
+    <title>HeartTales</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/index.css">
     <style>
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Space Grotesk', sans-serif;
       }
       .font-comic {
-        font-family: 'Comic Neue', cursive;
+        font-family: 'Fraunces', serif;
+      }
+      /* force select/option styling over browser defaults */
+      select, select option {
+        font-family: 'Space Grotesk', sans-serif;
       }
     </style>
   <script type="importmap">
@@ -25,9 +30,8 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body class="app-body">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

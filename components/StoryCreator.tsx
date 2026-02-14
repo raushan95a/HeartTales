@@ -4,6 +4,7 @@ import { CharacterCard } from './CharacterCard';
 import { Button } from './Button';
 import { generateStoryFromPrompt, generateSceneImage, generateSpeech } from '../services/geminiService';
 import { Sparkles, ArrowRight, BookOpen, User, Mic } from 'lucide-react';
+import { Dropdown } from './Dropdown';
 
 interface StoryCreatorProps {
   characters: Character[];
@@ -195,14 +196,14 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
   if (step === 0) {
     return (
         <div className="max-w-2xl mx-auto py-12 px-4">
-            <h2 className="text-3xl font-bold text-slate-900 mb-6 text-center">First, tell us about YOU</h2>
-            <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-8">
+          <h2 className="text-3xl font-bold text-slate-900 mb-6 text-center font-display">First, tell us about YOU</h2>
+          <div className="soft-card p-8">
                 <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Your Name (The Hero)</label>
                         <input
                             type="text"
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500"
+                  className="input-shell"
                             value={tempProfile.name}
                             onChange={e => setTempProfile({ ...tempProfile, name: e.target.value })}
                             placeholder="e.g. Alex"
@@ -211,36 +212,27 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">Gender</label>
-                            <select
-                                className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
-                                value={tempProfile.gender}
-                                onChange={e => setTempProfile({ ...tempProfile, gender: e.target.value as 'Male' | 'Female' })}
-                            >
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
+                            <Dropdown
+                              value={tempProfile.gender}
+                              options={['Male', 'Female']}
+                              onChange={v => setTempProfile({ ...tempProfile, gender: v as 'Male' | 'Female' })}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">Your Voice</label>
-                            <div className="relative">
-                                <Mic className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                <select
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 bg-white"
-                                    value={tempProfile.voice}
-                                    onChange={e => setTempProfile({ ...tempProfile, voice: e.target.value })}
-                                >
-                                    {VOICE_OPTIONS.map(opt => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <Dropdown
+                              value={tempProfile.voice}
+                              options={VOICE_OPTIONS}
+                              onChange={v => setTempProfile({ ...tempProfile, voice: v })}
+                              icon={<Mic className="w-4 h-4" />}
+                            />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
                         <textarea
                             rows={3}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300"
+                        className="textarea-shell"
                             value={tempProfile.description}
                             onChange={e => setTempProfile({ ...tempProfile, description: e.target.value })}
                             placeholder="e.g. A curious explorer with messy hair..."
@@ -262,18 +254,18 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
   if (step === 3) {
       return (
         <div className="max-w-xl mx-auto py-24 px-4 text-center">
-             <h2 className="text-2xl font-bold text-slate-900 mb-2">Creating Your Masterpiece</h2>
-             <p className="text-slate-500 mb-8">Please wait, we are generating text, drawing images, and recording audio.</p>
+           <h2 className="text-2xl font-bold text-slate-900 mb-2 font-display">Creating Your Masterpiece</h2>
+           <p className="text-slate-500 mb-10">Weaving text, sketching scenes, and recording voices…</p>
              
-             <div className="w-full bg-slate-200 rounded-full h-4 mb-4 overflow-hidden">
+             <div className="w-full bg-slate-100 rounded-full h-5 mb-4 progress-bar">
                 <div 
-                    className="bg-indigo-600 h-full rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2" 
-                    style={{ width: `${progress}%` }}
+              className="bg-gradient-to-r from-rose-400 via-amber-400 to-rose-400 h-full rounded-full transition-all duration-700 ease-out"  
+                    style={{ width: `${progress}%`, backgroundSize: '200% 100%', animation: 'shimmer 2s linear infinite' }}
                 >
                 </div>
              </div>
-             <p className="font-mono text-sm text-indigo-600 font-semibold animate-pulse">{statusText}</p>
-             <p className="text-xs text-slate-400 mt-2">{Math.round(progress)}% Complete</p>
+           <p className="text-sm text-rose-500 font-bold animate-pulse">{statusText}</p>
+             <p className="text-xs text-slate-400 mt-3 font-medium">{Math.round(progress)}% Complete</p>
         </div>
       );
   }
@@ -281,19 +273,19 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <button onClick={onCancel} className="text-sm text-slate-500 hover:text-indigo-600 mb-4 flex items-center">
+        <button onClick={onCancel} className="text-sm text-slate-500 hover:text-rose-500 mb-4 flex items-center">
            &larr; Back to Dashboard
         </button>
-        <h2 className="text-3xl font-bold text-slate-900">Create a New Story</h2>
+        <h2 className="text-3xl font-bold text-slate-900 font-display">Create a New Story</h2>
         <p className="text-slate-500 mt-1">
-            Starring <span className="font-bold text-indigo-600">{userProfile?.name}</span> and friends.
+            Starring <span className="font-bold text-rose-500">{userProfile?.name}</span> and friends.
         </p>
       </div>
 
       {/* Step 1: Select Characters */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-          <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm mr-2">1</span>
+          <span className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-sm mr-2">1</span>
           Select Friends to Join You
         </h3>
         
@@ -319,11 +311,11 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
       {/* Step 2: Prompt */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-          <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm mr-2">2</span>
+          <span className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-sm mr-2">2</span>
           Story Adventure
         </h3>
         <textarea
-          className="w-full h-32 p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none text-lg"
+          className="textarea-shell h-32 resize-none text-lg"
           placeholder="e.g. We find a secret map in the attic and go on a treasure hunt..."
           value={prompt}
           onChange={(e) => {
@@ -337,7 +329,7 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
       {/* Action */}
       <div className="flex flex-col items-center">
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm max-w-lg w-full text-center border border-red-200">
+          <div className="mb-4 p-3 bg-rose-50 text-rose-700 rounded-lg text-sm max-w-lg w-full text-center border border-rose-200">
             {error}
           </div>
         )}
@@ -345,7 +337,7 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
         <Button 
           onClick={handleGenerate}
           disabled={!prompt.trim()} 
-          className="w-full md:w-auto text-lg px-8 py-4 shadow-xl shadow-indigo-200"
+          className="w-full md:w-auto text-lg px-8 py-4"
           icon={<Sparkles className="w-5 h-5"/>}
         >
           Generate Full Story

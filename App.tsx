@@ -5,7 +5,7 @@ import { StoryCreator } from './components/StoryCreator';
 import { StoryViewer } from './components/StoryViewer';
 import { CharacterCall } from './components/CharacterCall';
 import { Button } from './components/Button';
-import { BookOpen, Users, Plus, User, Phone } from 'lucide-react';
+import { BookOpen, Users, Plus, User, Phone, Sparkles } from 'lucide-react';
 
 const STORAGE_KEY_CHARS = 'storyverse_chars';
 const STORAGE_KEY_STORIES = 'storyverse_stories';
@@ -62,6 +62,11 @@ export default function App() {
     setStories(prev => prev.map(s => s.id === updatedStory.id ? updatedStory : s));
   };
 
+  const handleOpenStory = (id: string) => {
+    setActiveStoryId(id);
+    setView('VIEW_STORY');
+  };
+
   const activeStory = stories.find(s => s.id === activeStoryId);
 
   const renderContent = () => {
@@ -96,63 +101,101 @@ export default function App() {
           />
         );
       case 'DASHBOARD':
-      default:
+      default: {
+        const stats = [
+          { label: 'Stories', value: String(stories.length).padStart(2, '0'), icon: '📖' },
+          { label: 'Characters', value: String(characters.length).padStart(2, '0'), icon: '🎭' },
+          { label: 'Hero', value: userProfile?.name || 'Guest', icon: '⭐' }
+        ];
+
         return (
           <div className="max-w-6xl mx-auto py-8 px-4">
-            <div className="text-center py-16 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl shadow-xl text-white mb-12">
-              <h1 className="text-5xl font-extrabold mb-4 tracking-tight">StoryVerse AI</h1>
-              <p className="text-xl text-indigo-100 max-w-2xl mx-auto mb-8">
-                Turn your friends and family into comic book heroes. Create personalized stories with AI magic.
-              </p>
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={() => setView('CREATE_STORY')}
-                  className="bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg border-none"
-                  icon={<Plus className="w-5 h-5" />}
-                >
-                  Create New Story
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setView('CHARACTERS')}
-                  className="border-indigo-400 text-white hover:bg-indigo-500 hover:text-white"
-                  icon={<Users className="w-5 h-5" />}
-                >
-                  Manage Characters
-                </Button>
+            <div className="hero-shell p-10 md:p-16 mb-12">
+              <div className="hero-grid" />
+              <div className="hero-glow" />
+              <div className="hero-orb" />
+              <div className="relative z-10">
+                <span className="pill mb-5 animate-fade-in">✨ Heartfelt stories, AI-crafted</span>
+                <h1 className="text-5xl md:text-6xl font-extrabold mb-4 tracking-tight font-display animate-fade-in-up">
+                  HeartTales
+                </h1>
+                <p className="text-lg md:text-xl text-slate-600 max-w-2xl mb-8 animate-fade-in-up stagger-1">
+                  Turn your loved ones into comic heroes and relive memories through rich, illustrated tales.
+                </p>
+                <div className="flex flex-wrap gap-3 animate-fade-in-up stagger-2">
+                  <Button
+                    onClick={() => setView('CREATE_STORY')}
+                    icon={<Sparkles className="w-5 h-5" />}
+                  >
+                    Start a New Tale
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setView('CHARACTERS')}
+                    icon={<Users className="w-5 h-5" />}
+                  >
+                    Manage Characters
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setView('CALL_CHARACTER')}
+                    icon={<Phone className="w-5 h-5" />}
+                  >
+                    Call a Character
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10 animate-fade-in-up stagger-3">
+                  {stats.map((stat, idx) => (
+                    <div key={idx} className="stat-card">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{stat.icon}</span>
+                        <p className="kicker">{stat.label}</p>
+                      </div>
+                      <p className="text-2xl font-bold text-slate-900 mt-2">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center">
-                <BookOpen className="w-6 h-6 mr-2 text-indigo-600" />
-                Your Stories
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center">
+                  <BookOpen className="w-6 h-6 mr-2 text-amber-500" />
+                  Your Stories
+                </h2>
+                {stories.length > 0 && (
+                  <Button variant="outline" onClick={() => setView('CREATE_STORY')}>
+                    New Story
+                  </Button>
+                )}
+              </div>
 
               {stories.length === 0 ? (
-                <div className="bg-white rounded-xl p-12 text-center border-2 border-dashed border-slate-200">
-                  <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <BookOpen className="w-8 h-8" />
+                <div className="soft-card p-16 text-center border-2 border-dashed border-slate-200 animate-fade-in-up">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-50 to-rose-50 text-rose-300 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                    <BookOpen className="w-10 h-10" />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900">No stories yet</h3>
-                  <p className="text-slate-500 mt-1 mb-6">Create your first magical adventure today!</p>
-                  <Button onClick={() => setView('CREATE_STORY')}>Start Writing</Button>
+                  <h3 className="text-xl font-bold text-slate-900 font-display">No stories yet</h3>
+                  <p className="text-slate-500 mt-2 mb-8 max-w-sm mx-auto">Your story library is empty. Create your first magical adventure today!</p>
+                  <Button onClick={() => setView('CREATE_STORY')} icon={<Sparkles className="w-4 h-4" />}>Start Writing</Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {stories.map(story => (
                     <div
                       key={story.id}
-                      onClick={() => { setActiveStoryId(story.id); setView('VIEW_STORY'); }}
-                      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-slate-100 overflow-hidden cursor-pointer group"
+                      onClick={() => handleOpenStory(story.id)}
+                      className="story-card cursor-pointer group"
                     >
                       <div className="h-40 bg-slate-100 relative overflow-hidden">
                         {/* Show first scene image if available, else pattern */}
                         {story.scenes[0]?.imageUrl ? (
                           <img src={story.scenes[0].imageUrl} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                            <BookOpen className="w-12 h-12 text-indigo-200" />
+                          <div className="w-full h-full bg-gradient-to-br from-amber-50 to-rose-100 flex items-center justify-center">
+                            <BookOpen className="w-12 h-12 text-amber-300" />
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
@@ -166,7 +209,7 @@ export default function App() {
                         <div className="flex items-center justify-between">
                           <div className="flex -space-x-2">
                             {/* Display User Avatar + Characters */}
-                            <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold bg-indigo-600 z-10">
+                            <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold bg-rose-500 z-10">
                               {story.userProfile?.name?.charAt(0) || 'U'}
                             </div>
                             {story.characters.slice(0, 2).map((char, i) => (
@@ -175,7 +218,7 @@ export default function App() {
                               </div>
                             ))}
                           </div>
-                          <span className="text-indigo-600 text-sm font-medium group-hover:underline">Read Story &rarr;</span>
+                          <span className="text-rose-500 text-sm font-medium group-hover:underline">Read Story &rarr;</span>
                         </div>
                       </div>
                     </div>
@@ -185,35 +228,36 @@ export default function App() {
             </div>
           </div>
         );
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div className="min-h-screen">
+      <nav className="navbar-glass sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between h-16">
-            <div className="flex items-center cursor-pointer" onClick={() => setView('DASHBOARD')}>
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-2">
+            <div className="flex items-center cursor-pointer group" onClick={() => setView('DASHBOARD')}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mr-2.5 shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" style={{ background: 'linear-gradient(135deg, var(--brand-1), var(--brand-2))' }}>
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-900 tracking-tight">StoryVerse AI</span>
+              <span className="font-bold text-xl text-slate-900 tracking-tight font-display">HeartTales</span>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center text-sm font-medium text-slate-600 mr-2 bg-slate-100 px-3 py-1 rounded-full">
-                <User className="w-4 h-4 mr-2" />
+            <div className="flex items-center space-x-2">
+              <div className="hidden md:flex items-center text-sm font-semibold text-slate-600 mr-1 px-3.5 py-1.5 rounded-full border border-slate-200/60 bg-white/60 backdrop-blur-sm">
+                <User className="w-4 h-4 mr-2 text-rose-400" />
                 {userProfile ? userProfile.name : 'Guest'}
               </div>
               <button
                 onClick={() => setView('DASHBOARD')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === 'DASHBOARD' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`nav-pill text-sm font-semibold ${view === 'DASHBOARD' ? 'nav-pill-active' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => setView('CALL_CHARACTER')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${view === 'CALL_CHARACTER' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`nav-pill text-sm font-semibold flex items-center gap-1.5 ${view === 'CALL_CHARACTER' ? 'nav-pill-active' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 <Phone className="w-4 h-4" />
                 Call Character
