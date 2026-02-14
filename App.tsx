@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Character, Story, ViewState } from './types';
+import { Character, Story, ViewState, UserProfile } from './types';
 import { CharacterManager } from './components/CharacterManager';
 import { StoryCreator } from './components/StoryCreator';
 import { StoryViewer } from './components/StoryViewer';
 import { Button } from './components/Button';
-import { BookOpen, Users, Plus } from 'lucide-react';
+import { BookOpen, Users, Plus, User } from 'lucide-react';
 
 const STORAGE_KEY_CHARS = 'storyverse_chars';
 const STORAGE_KEY_STORIES = 'storyverse_stories';
+const STORAGE_KEY_PROFILE = 'storyverse_profile';
 
 export default function App() {
   const [view, setView] = useState<ViewState>('DASHBOARD');
   
+  // Persisted User Profile
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY_PROFILE);
+        return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+  });
+
+  // Persisted Characters
   const [characters, setCharacters] = useState<Character[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_CHARS);
@@ -22,6 +32,7 @@ export default function App() {
     }
   });
   
+  // Persisted Stories
   const [stories, setStories] = useState<Story[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_STORIES);
@@ -34,21 +45,11 @@ export default function App() {
 
   const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_CHARS, JSON.stringify(characters));
-    } catch (e) {
-      console.error("Failed to save characters to localStorage", e);
-    }
-  }, [characters]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_STORIES, JSON.stringify(stories));
-    } catch (e) {
-      console.error("Failed to save stories to localStorage", e);
-    }
-  }, [stories]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY_CHARS, JSON.stringify(characters)); }, [characters]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY_STORIES, JSON.stringify(stories)); }, [stories]);
+  useEffect(() => { 
+      if (userProfile) localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userProfile)); 
+  }, [userProfile]);
 
   const handleStoryCreated = (story: Story) => {
     setStories([story, ...stories]);
@@ -70,6 +71,8 @@ export default function App() {
         return (
           <StoryCreator 
             characters={characters} 
+            userProfile={userProfile}
+            onUpdateUserProfile={setUserProfile}
             onStoryCreated={handleStoryCreated}
             onCancel={() => setView('DASHBOARD')}
           />
@@ -153,16 +156,15 @@ export default function App() {
                          <p className="text-slate-500 text-sm line-clamp-2 mb-4">{story.synopsis}</p>
                          <div className="flex items-center justify-between">
                             <div className="flex -space-x-2">
-                              {story.characters.slice(0, 3).map((char, i) => (
+                              {/* Display User Avatar + Characters */}
+                              <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold bg-indigo-600 z-10">
+                                {story.userProfile?.name.charAt(0) || 'U'}
+                              </div>
+                              {story.characters.slice(0, 2).map((char, i) => (
                                 <div key={i} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold ${char.avatarColor}`}>
                                   {char.name.charAt(0)}
                                 </div>
                               ))}
-                              {story.characters.length > 3 && (
-                                <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold">
-                                  +{story.characters.length - 3}
-                                </div>
-                              )}
                             </div>
                             <span className="text-indigo-600 text-sm font-medium group-hover:underline">Read Story &rarr;</span>
                          </div>
@@ -179,7 +181,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navigation Bar */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between h-16">
@@ -191,24 +192,21 @@ export default function App() {
             </div>
             
             <div className="flex items-center space-x-4">
+                <div className="hidden md:flex items-center text-sm font-medium text-slate-600 mr-2 bg-slate-100 px-3 py-1 rounded-full">
+                    <User className="w-4 h-4 mr-2" />
+                    {userProfile ? userProfile.name : 'Guest'}
+                </div>
               <button 
                 onClick={() => setView('DASHBOARD')}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === 'DASHBOARD' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Dashboard
               </button>
-              <button 
-                onClick={() => setView('CHARACTERS')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === 'CHARACTERS' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                Characters
-              </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
       <main>
         {renderContent()}
       </main>

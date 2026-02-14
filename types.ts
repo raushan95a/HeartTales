@@ -9,9 +9,17 @@ export interface Character {
   voice: string;
 }
 
+export interface UserProfile {
+  name: string;
+  gender: 'Male' | 'Female';
+  description: string;
+  voice: string;
+}
+
 export interface Dialogue {
   speaker: string;
   text: string;
+  audioData?: string; // Base64 audio string
 }
 
 export interface Scene {
@@ -29,6 +37,7 @@ export interface Story {
   synopsis: string;
   createdAt: number;
   characters: Character[];
+  userProfile: UserProfile; // Store the user context for this story
   scenes: Scene[];
 }
 

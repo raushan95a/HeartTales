@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Character, Story, Scene } from "../types";
+import { Character, Story, Scene, UserProfile } from "../types";
 
 // Initialize Gemini API Client
 const apiKey = process.env.API_KEY || ''; 
@@ -7,9 +7,10 @@ const apiKey = process.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 export const generateStoryFromPrompt = async (
+  userProfile: UserProfile,
   characters: Character[],
   prompt: string
-): Promise<Omit<Story, 'id' | 'createdAt'>> => {
+): Promise<Omit<Story, 'id' | 'createdAt' | 'userProfile'>> => {
   if (!apiKey) throw new Error("API Key is missing");
 
   // Format characters for the prompt
@@ -17,10 +18,15 @@ export const generateStoryFromPrompt = async (
     .map(c => `- ${c.name} (${c.relation}, ${c.gender}): ${c.traits}. ${c.description}`)
     .join('\n');
 
-  // Explicitly add 'Me' to the context
+  // Explicitly add 'Me' to the context using UserProfile
   const inputContext = `
-  CHARACTERS:
-  1. "Me" (The User/Protagonist): The main character. Gender: Neutral/User's choice.
+  MAIN PROTAGONIST (USER):
+  - Name: ${userProfile.name}
+  - Gender: ${userProfile.gender}
+  - Description: ${userProfile.description}
+  (Refer to this character as "${userProfile.name}" or "Me" in the story structure, but consistent name in dialogue speaker fields).
+
+  SUPPORTING CHARACTERS:
   ${characterDescriptions}
 
   USER STORY IDEA:
@@ -32,7 +38,7 @@ export const generateStoryFromPrompt = async (
   // DRACONIAN instructions to keep it short and valid JSON.
   const systemInstruction = `You are a strict JSON Data Generator API. 
   
-  Task: Generate a 3-scene comic story where "Me" (the user) interacts with the provided characters.
+  Task: Generate a 3-scene comic story where the main protagonist (${userProfile.name}) interacts with the supporting characters.
   
   CONSTRAINTS:
   1. Output raw JSON only. No markdown formatting.
@@ -40,7 +46,7 @@ export const generateStoryFromPrompt = async (
   3. "narration": MAX 10 words.
   4. "dialogue": MAX 2 items per scene. Text MAX 10 words.
   5. TOTAL SCENES: Exactly 3.
-  6. Ensure "Me" is an active participant in the story.
+  6. Ensure ${userProfile.name} is an active participant.
   
   JSON Schema:
   {
