@@ -141,11 +141,14 @@ export const generateStoryFromPrompt = async (
   }
 };
 
-export const generateSceneImage = async (visualDescription: string): Promise<string> => {
+export const generateSceneImage = async (visualDescription: string, sceneIndex: number = 0): Promise<string> => {
   if (!apiKey) throw new Error("API Key is missing");
 
   const model = "gemini-2.5-flash-image";
   const prompt = `Manga style illustration, black and white or muted colors, dramatic lighting, high quality line art. ${visualDescription}`;
+
+  // Fallback images in public/assets (1.png, 2.png, 3.png)
+  const fallbackImage = `/assets/${(sceneIndex % 3) + 1}.png`;
 
   // Retry logic wrapper
   const callApi = async (attempt = 1): Promise<string> => {
@@ -189,12 +192,12 @@ export const generateSceneImage = async (visualDescription: string): Promise<str
   try {
     return await callApi();
   } catch (error) {
-    console.error("Error generating image:", error);
-    throw error;
+    console.warn(`Image generation failed for scene ${sceneIndex + 1}, using fallback image:`, error);
+    return fallbackImage;
   }
 };
 
-export const generateSpeech = async (text: string, voiceName: string = 'Zephyr'): Promise<string> => {
+const generateSpeechXTTS = async (text: string, voiceName: string = 'Zephyr'): Promise<string> => {
   const ttsUrl = import.meta.env.VITE_TTS_API_URL;
   if (!ttsUrl) throw new Error("TTS API URL is missing");
 
@@ -269,8 +272,64 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   try {
     return await callApi();
   } catch (error) {
-    console.error("Error generating speech:", error);
+    console.error("Error generating speech (XTTS):", error);
     throw error;
+  }
+};
+
+const generateSpeechWithGemini = async (text: string, voiceName: string = 'Puck'): Promise<string> => {
+  if (!apiKey) throw new Error("API Key is missing");
+
+  // Map our internal voice names to Gemini compatible ones if needed, 
+  // or assume they match. The prompt suggests using "Puck", "Charon", "Kore", "Fenrir", "Zephyr"
+  // which are likely the intended names for this model.
+
+  const model = "gemini-2.5-flash-preview-tts"; // User requested this specific model for TTS
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: { parts: [{ text }] },
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName } // Use mapped or direct voice name
+          },
+        },
+      }
+    });
+
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0) {
+      const parts = candidates[0].content.parts;
+      for (const part of parts) {
+        if (part.inlineData && part.inlineData.data) {
+          return part.inlineData.data;
+        }
+      }
+    }
+    throw new Error("No audio data found in Gemini response");
+  } catch (error) {
+    console.warn("Gemini Service TTS failed:", error);
+    throw error;
+  }
+};
+
+export const generateSpeech = async (text: string, voiceName: string = 'Zephyr'): Promise<string> => {
+  try {
+    // Try Gemini First
+    // We might need to map voice names if the model expects specific ones
+    // For now we pass the voiceName directly as per user instruction impl
+    return await generateSpeechWithGemini(text, voiceName);
+  } catch (error) {
+    console.warn("Falling back to XTTS due to Gemini error");
+    try {
+      return await generateSpeechXTTS(text, voiceName);
+    } catch (xttsError) {
+      console.error("Both Gemini and XTTS failed:", xttsError);
+      throw xttsError;
+    }
   }
 };
 
