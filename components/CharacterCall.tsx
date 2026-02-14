@@ -317,10 +317,65 @@ const ActiveCall: React.FC<{
     const [isLoading, setIsLoading] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [isConnecting, setIsConnecting] = useState(true);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const isSpeakerOnRef = useRef(isSpeakerOn);
+
+    // Keep ref in sync with state so the TTS callback always has the latest value
+    useEffect(() => { isSpeakerOnRef.current = isSpeakerOn; }, [isSpeakerOn]);
+
+    // ── Browser TTS helper ──
+    const speakText = (text: string) => {
+        if (!isSpeakerOnRef.current || !('speechSynthesis' in window)) return;
+
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = character.gender === 'Female' ? 1.3 : 0.9;
+        utterance.volume = 1;
+
+        // Try to pick a voice matching gender
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const genderKeywords = character.gender === 'Female'
+                ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona']
+                : ['male', 'man', 'david', 'daniel', 'james', 'alex', 'mark'];
+            const match = voices.find(v =>
+                genderKeywords.some(k => v.name.toLowerCase().includes(k))
+            );
+            if (match) utterance.voice = match;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Preload voices (some browsers need this)
+    useEffect(() => {
+        window.speechSynthesis?.getVoices();
+        const handleVoices = () => window.speechSynthesis.getVoices();
+        window.speechSynthesis?.addEventListener?.('voiceschanged', handleVoices);
+        return () => {
+            window.speechSynthesis?.removeEventListener?.('voiceschanged', handleVoices);
+            window.speechSynthesis?.cancel();
+        };
+    }, []);
+
+    // Stop speaking when speaker is toggled off
+    useEffect(() => {
+        if (!isSpeakerOn) {
+            window.speechSynthesis?.cancel();
+            setIsSpeaking(false);
+        }
+    }, [isSpeakerOn]);
 
     // Call timer
     useEffect(() => {
@@ -328,25 +383,27 @@ const ActiveCall: React.FC<{
         return () => clearInterval(timer);
     }, []);
 
-    // Simulate connecting
+    // Simulate connecting + greeting
     useEffect(() => {
         const timeout = setTimeout(() => {
             setIsConnecting(false);
-            // Character greets the user
+            const greetingText = `Hey ${userProfile.name}! Great to see you! What's up?`;
             const greeting: ChatMessage = {
                 id: `msg-${Date.now()}`,
                 role: 'character',
-                text: `Hey ${userProfile.name}! Great to see you! What's up?`,
+                text: greetingText,
                 timestamp: Date.now(),
             };
             setMessages([greeting]);
+            // Speak the greeting
+            setTimeout(() => speakText(greetingText), 300);
         }, 2000);
         return () => clearTimeout(timeout);
     }, [userProfile.name]);
 
-    // Auto-scroll chat
+    // Auto-scroll chat — scroll only within the chat container
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, [messages]);
 
     const formatTime = (secs: number) => {
@@ -380,15 +437,20 @@ const ActiveCall: React.FC<{
                 timestamp: Date.now(),
             };
             setMessages(prev => [...prev, charMsg]);
+
+            // Speak the response using browser TTS
+            speakText(response);
         } catch (err) {
             console.error('Failed to get character response:', err);
+            const fallback = "Sorry, I'm having trouble hearing you... can you say that again?";
             const errorMsg: ChatMessage = {
                 id: `msg-${Date.now() + 1}`,
                 role: 'character',
-                text: "Sorry, I'm having trouble hearing you... can you say that again?",
+                text: fallback,
                 timestamp: Date.now(),
             };
             setMessages(prev => [...prev, errorMsg]);
+            speakText(fallback);
         } finally {
             setIsLoading(false);
             inputRef.current?.focus();
@@ -405,9 +467,9 @@ const ActiveCall: React.FC<{
     const charColor = colorMap[character.avatarColor] || '#6366f1';
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col h-screen overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
             {/* ─── Top bar ─── */}
-            <div className="flex items-center justify-between px-5 py-3 bg-black/30 backdrop-blur-sm">
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 bg-black/30 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
                     <span className="text-white/80 text-sm font-medium">
@@ -422,13 +484,13 @@ const ActiveCall: React.FC<{
                 </div>
             </div>
 
-            {/* ─── Main content area ─── */}
-            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-                {/* Avatar area */}
-                <div className="flex-1 relative min-h-[35vh] lg:min-h-0" style={{
+            {/* ─── Main content area — fills remaining space ─── */}
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+                {/* Avatar area — fixed height on mobile, flex on desktop */}
+                <div className="h-[45vh] lg:h-auto lg:flex-1 flex-shrink-0 relative" style={{
                     background: `radial-gradient(ellipse at center, ${charColor}15 0%, #0f172a 70%)`,
                 }}>
-                    <Avatar3D character={character} isSpeaking={isLoading} isRinging={isConnecting} />
+                    <Avatar3D character={character} isSpeaking={isSpeaking || isLoading} isRinging={isConnecting} />
 
                     {/* Connecting overlay */}
                     {isConnecting && (
@@ -453,17 +515,17 @@ const ActiveCall: React.FC<{
                     </div>
                 </div>
 
-                {/* Chat panel */}
-                <div className="lg:w-96 w-full flex flex-col bg-slate-800/95 backdrop-blur-xl border-l border-white/5">
+                {/* Chat panel — takes remaining space on mobile, fixed width on desktop */}
+                <div className="flex-1 lg:flex-none lg:w-96 flex flex-col min-h-0 bg-slate-800/95 backdrop-blur-xl border-l border-white/5">
                     {/* Chat header */}
-                    <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                    <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 flex items-center gap-2">
                         <MessageCircle className="w-4 h-4 text-white/50" />
                         <span className="text-white/70 text-sm font-medium">Chat</span>
                         <span className="text-white/30 text-xs ml-auto">{messages.length} messages</span>
                     </div>
 
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ minHeight: '120px', maxHeight: 'calc(100vh - 250px)' }}>
+                    {/* Messages — scrollable, constrained */}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
                         {messages.map(msg => (
                             <div
                                 key={msg.id}
@@ -480,8 +542,8 @@ const ActiveCall: React.FC<{
                                     )}
                                     <div
                                         className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
-                                                ? 'bg-indigo-600 text-white rounded-br-md'
-                                                : 'bg-white/10 text-white/90 rounded-bl-md'
+                                            ? 'bg-indigo-600 text-white rounded-br-md'
+                                            : 'bg-white/10 text-white/90 rounded-bl-md'
                                             }`}
                                     >
                                         {msg.text}
@@ -513,7 +575,7 @@ const ActiveCall: React.FC<{
                     </div>
 
                     {/* Input bar */}
-                    <div className="px-4 py-3 border-t border-white/5">
+                    <div className="flex-shrink-0 px-4 py-3 border-t border-white/5">
                         <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-1 border border-white/10 focus-within:border-indigo-500/50 transition-colors">
                             <input
                                 ref={inputRef}
@@ -539,7 +601,7 @@ const ActiveCall: React.FC<{
             </div>
 
             {/* ─── Bottom call controls ─── */}
-            <div className="flex items-center justify-center gap-5 py-4 bg-black/40 backdrop-blur-sm">
+            <div className="flex-shrink-0 flex items-center justify-center gap-5 py-4 bg-black/40 backdrop-blur-sm">
                 <button
                     onClick={() => setIsMuted(!isMuted)}
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white hover:bg-white/20'
@@ -549,7 +611,7 @@ const ActiveCall: React.FC<{
                 </button>
 
                 <button
-                    onClick={onEndCall}
+                    onClick={() => { window.speechSynthesis?.cancel(); onEndCall(); }}
                     className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-500/30 transition-all hover:scale-105 active:scale-95"
                 >
                     <PhoneOff className="w-7 h-7" />
