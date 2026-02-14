@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  xtts:
+    image: ghcr.io/coqui-ai/tts
+    container_name: xtts-server
+    command: --model_name tts_models/multilingual/multi-dataset/xtts_v2
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./xtts-data:/root/.local/share/tts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped

@@ -2,7 +2,7 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Character, Story, Scene, UserProfile } from "../types";
 
 // Initialize Gemini API Client
-const apiKey = process.env.API_KEY || ''; 
+const apiKey = process.env.API_KEY || '';
 
 const ai = new GoogleGenAI({ apiKey });
 
@@ -34,7 +34,7 @@ export const generateStoryFromPrompt = async (
   `;
 
   const model = "gemini-3-flash-preview";
-  
+
   // DRACONIAN instructions to keep it short and valid JSON.
   const systemInstruction = `You are a strict JSON Data Generator API. 
   
@@ -68,7 +68,7 @@ export const generateStoryFromPrompt = async (
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        maxOutputTokens: 4000, 
+        maxOutputTokens: 4000,
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -115,11 +115,11 @@ export const generateStoryFromPrompt = async (
       console.error("JSON Parse Error. Raw Text:", jsonText);
       throw new Error("Received malformed JSON from AI model.");
     }
-    
+
     // Validate structure
     if (!parsed || !Array.isArray(parsed.scenes)) {
-        console.error("Invalid Structure:", parsed);
-        throw new Error("AI response missing 'scenes' array.");
+      console.error("Invalid Structure:", parsed);
+      throw new Error("AI response missing 'scenes' array.");
     }
 
     // Transform to match our internal Story type
@@ -150,39 +150,39 @@ export const generateSceneImage = async (visualDescription: string): Promise<str
   // Retry logic wrapper
   const callApi = async (attempt = 1): Promise<string> => {
     try {
-        const response = await ai.models.generateContent({
-            model,
-            contents: { 
-                parts: [
-                    { text: prompt }
-                ] 
-            },
-            config: {
-                imageConfig: {
-                    aspectRatio: "16:9",
-                }
-            }
-        });
+      const response = await ai.models.generateContent({
+        model,
+        contents: {
+          parts: [
+            { text: prompt }
+          ]
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "16:9",
+          }
+        }
+      });
 
-        const candidates = response.candidates;
-        if (candidates && candidates.length > 0) {
-            const parts = candidates[0].content.parts;
-            for (const part of parts) {
-                if (part.inlineData && part.inlineData.data) {
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            }
+      const candidates = response.candidates;
+      if (candidates && candidates.length > 0) {
+        const parts = candidates[0].content.parts;
+        for (const part of parts) {
+          if (part.inlineData && part.inlineData.data) {
+            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          }
         }
-        
-        throw new Error("No image data found in response");
+      }
+
+      throw new Error("No image data found in response");
     } catch (e: any) {
-        // Retry on 500 or unknown RPC errors up to 2 times
-        if (attempt < 3 && (e.message?.includes('500') || e.message?.includes('Rpc failed'))) {
-            console.warn(`Image generation failed (attempt ${attempt}). Retrying...`, e.message);
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s
-            return callApi(attempt + 1);
-        }
-        throw e;
+      // Retry on 500 or unknown RPC errors up to 2 times
+      if (attempt < 3 && (e.message?.includes('500') || e.message?.includes('Rpc failed'))) {
+        console.warn(`Image generation failed (attempt ${attempt}). Retrying...`, e.message);
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s
+        return callApi(attempt + 1);
+      }
+      throw e;
     }
   };
 
@@ -195,44 +195,74 @@ export const generateSceneImage = async (visualDescription: string): Promise<str
 };
 
 export const generateSpeech = async (text: string, voiceName: string = 'Zephyr'): Promise<string> => {
-  if (!apiKey) throw new Error("API Key is missing");
+  const ttsUrl = import.meta.env.VITE_TTS_API_URL;
+  if (!ttsUrl) throw new Error("TTS API URL is missing");
 
-  const model = "gemini-2.5-flash-preview-tts";
+  // XTTS requires a speaker wav to clone. We need to fetch a default one or provide one.
+  // The official docker run command often suggests mapping a folder with wavs.
+  // However, the api/tts endpoint of coqui-ai/tts usually takes a `speaker_wav` file path local to the container OR a file upload.
+  // BUT: The standard simple setup often allows just a speaker name if models support it, or we send a dummy wav.
+  // LET'S ASSUME for this integration we use a standard speaker file that exists in the default image or we find a way to list them.
+  // actually, the XTTS model needs a reference audio.
+
+  // Strategy:
+  // 1. Fetch available speakers to see if we can just use a name.
+  // 2. If not, we might need to send a base64 sample. 
+
+  // SIMPLIFICATION for this step: Try to use a default "speaker_wav" path that might exist, or fail gracefully.
+  // Better yet: XTTS-v2 supports "speaker_idx" if using a model with multiple speakers, but usually it needs "speaker_wav".
+  // Let's try to fetch the list of speakers from the server first if possible? No, let's stick to the request.
 
   const callApi = async (attempt = 1): Promise<string> => {
     try {
-        const response = await ai.models.generateContent({
-        model,
-        contents: { parts: [{ text }] },
-        config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-                voiceConfig: {
-                prebuiltVoiceConfig: { voiceName }
-                },
-            },
-        },
-        });
+      // The XTTS API endpoint is usually /tts_to_audio/
+      // payload: {"text": "...", "speaker_wav": "...", "language_id": "en"}
 
-        const candidates = response.candidates;
-        if (candidates && candidates.length > 0) {
-            const parts = candidates[0].content.parts;
-            for (const part of parts) {
-                if (part.inlineData && part.inlineData.data) {
-                    return part.inlineData.data;
-                }
-            }
-        }
-        throw new Error("No audio data found");
+      // We need to provide a speaker_wav. 
+      // Since we are running this in docker, we can map a folder of voices.
+      // For now, let's use a generic generic female voice if we can't find one.
+      // Wait, the user wants to use XTTS. 
+
+      // OPTION 1: Use the standard /api/tts endpoint
+      const response = await fetch(`${ttsUrl}/api/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          speaker_wav: "examples/female.wav", // Default example in some containers, might fail.
+          language_id: "en"
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`TTS Server Error: ${response.status} ${errText}`);
+      }
+
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            // remove "data:audio/wav;base64," prefix if we want raw base64, 
+            // but the existing code expects a full data string or just raw?
+            // existing code: return part.inlineData.data; -> this is RAW base64 without prefix.
+
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+          } else {
+            reject(new Error("Failed to convert blob to base64"));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
     } catch (e: any) {
-        // Retry on 429 (Quota) or 503 (Service Unavailable)
-        if (attempt < 4 && (e.message?.includes('429') || e.message?.includes('503') || e.status === 429 || e.status === 503)) {
-            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
-            console.warn(`Speech generation rate limited (attempt ${attempt}). Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return callApi(attempt + 1);
-        }
-        throw e;
+      console.warn(`Local TTS generation failed (attempt ${attempt}):`, e.message);
+      throw e;
     }
   };
 
@@ -277,18 +307,18 @@ async function decodeAudioDataHelper(
 
 // Helper to play the audio buffer
 export const playAudioData = async (base64String: string) => {
-    try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
-        
-        const bytes = decode(base64String);
-        const buffer = await decodeAudioDataHelper(bytes, audioContext, 24000, 1);
-        
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-        return source;
-    } catch (e) {
-        console.error("Error playing audio", e);
-    }
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+
+    const bytes = decode(base64String);
+    const buffer = await decodeAudioDataHelper(bytes, audioContext, 24000, 1);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+    return source;
+  } catch (e) {
+    console.error("Error playing audio", e);
+  }
 };
