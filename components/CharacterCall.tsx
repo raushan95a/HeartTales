@@ -643,8 +643,8 @@ const ActiveCall: React.FC<{
                         {/* Listening indicator */}
                         {isListening && (
                             <div className="flex items-center gap-2 mb-2 px-1">
-                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                                <span className="text-red-400 text-xs font-medium animate-pulse">Listening... speak now</span>
+                                <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+                                <span className="text-green-400 text-xs font-medium animate-pulse">Listening... speak now</span>
                             </div>
                         )}
                         <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-1 border border-white/10 focus-within:border-indigo-500/50 transition-colors">
@@ -653,7 +653,7 @@ const ActiveCall: React.FC<{
                                 onClick={toggleListening}
                                 disabled={isLoading || isConnecting}
                                 className={`p-2 rounded-xl transition-all disabled:opacity-30 ${isListening
-                                    ? 'bg-red-500/20 text-red-400'
+                                    ? 'bg-green-500/20 text-green-400'
                                     : 'text-white/40 hover:text-white/70 hover:bg-white/10'
                                     }`}
                                 title={isListening ? 'Stop listening' : 'Speak to send'}
@@ -689,12 +689,12 @@ const ActiveCall: React.FC<{
                     onClick={toggleListening}
                     disabled={isLoading || isConnecting}
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all relative ${isListening
-                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/40'
+                        ? 'bg-green-500 text-white shadow-lg shadow-green-500/40'
                         : 'bg-white/10 text-white hover:bg-white/20'
                         } disabled:opacity-30`}
                 >
                     {isListening && (
-                        <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-50" />
+                        <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping opacity-50" />
                     )}
                     {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
