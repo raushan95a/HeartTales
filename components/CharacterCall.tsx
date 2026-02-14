@@ -318,11 +318,17 @@ const ActiveCall: React.FC<{
     const [isMuted, setIsMuted] = useState(false);
     const [isSpeakerOn, setIsSpeakerOn] = useState(true);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [isConnecting, setIsConnecting] = useState(true);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const isSpeakerOnRef = useRef(isSpeakerOn);
+    const recognitionRef = useRef<any>(null);
+    const messagesRef = useRef<ChatMessage[]>([]);
+
+    // Keep messages ref in sync for use in speech recognition callback
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     // Keep ref in sync with state so the TTS callback always has the latest value
     useEffect(() => { isSpeakerOnRef.current = isSpeakerOn; }, [isSpeakerOn]);
@@ -412,14 +418,14 @@ const ActiveCall: React.FC<{
         return `${m}:${s}`;
     };
 
-    const handleSend = async () => {
-        const text = inputText.trim();
-        if (!text || isLoading) return;
+    // ── Core send function (used by both text input and voice) ──
+    const sendMessage = async (text: string, currentMessages?: ChatMessage[]) => {
+        if (!text.trim() || isLoading) return;
 
         const userMsg: ChatMessage = {
             id: `msg-${Date.now()}`,
             role: 'user',
-            text,
+            text: text.trim(),
             timestamp: Date.now(),
         };
         setMessages(prev => [...prev, userMsg]);
@@ -427,8 +433,10 @@ const ActiveCall: React.FC<{
         setIsLoading(true);
 
         try {
-            const history = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
-            const response = await generateCharacterResponse(character, userProfile, history, text);
+            // Use provided messages or current state for history
+            const msgList = currentMessages || messagesRef.current;
+            const history = msgList.map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
+            const response = await generateCharacterResponse(character, userProfile, history, text.trim());
 
             const charMsg: ChatMessage = {
                 id: `msg-${Date.now() + 1}`,
@@ -456,6 +464,62 @@ const ActiveCall: React.FC<{
             inputRef.current?.focus();
         }
     };
+
+    const handleSend = () => sendMessage(inputText);
+
+    // ── Speech Recognition (Speech-to-Text) ──
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    const toggleListening = () => {
+        if (!SpeechRecognition) {
+            alert('Speech recognition is not supported in your browser. Please use Chrome.');
+            return;
+        }
+
+        if (isListening) {
+            // Stop listening
+            recognitionRef.current?.stop();
+            setIsListening(false);
+            return;
+        }
+
+        // Start listening
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+        };
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript.trim()) {
+                sendMessage(transcript);
+            }
+        };
+
+        recognition.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
+
+    // Cleanup recognition on unmount
+    useEffect(() => {
+        return () => {
+            recognitionRef.current?.stop();
+        };
+    }, []);
 
     const colorMap: Record<string, string> = {
         'bg-red-500': '#ef4444', 'bg-orange-500': '#f97316', 'bg-amber-500': '#f59e0b',
@@ -576,15 +640,34 @@ const ActiveCall: React.FC<{
 
                     {/* Input bar */}
                     <div className="flex-shrink-0 px-4 py-3 border-t border-white/5">
+                        {/* Listening indicator */}
+                        {isListening && (
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                                <span className="text-red-400 text-xs font-medium animate-pulse">Listening... speak now</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-1 border border-white/10 focus-within:border-indigo-500/50 transition-colors">
+                            {/* Mic button inside input bar */}
+                            <button
+                                onClick={toggleListening}
+                                disabled={isLoading || isConnecting}
+                                className={`p-2 rounded-xl transition-all disabled:opacity-30 ${isListening
+                                    ? 'bg-red-500/20 text-red-400'
+                                    : 'text-white/40 hover:text-white/70 hover:bg-white/10'
+                                    }`}
+                                title={isListening ? 'Stop listening' : 'Speak to send'}
+                            >
+                                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            </button>
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={inputText}
                                 onChange={e => setInputText(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleSend()}
-                                placeholder={`Say something to ${character.name}...`}
-                                disabled={isLoading || isConnecting}
+                                placeholder={isListening ? 'Listening...' : `Say something to ${character.name}...`}
+                                disabled={isLoading || isConnecting || isListening}
                                 className="flex-1 bg-transparent text-white text-sm py-2.5 placeholder-white/30 outline-none disabled:opacity-40"
                             />
                             <button
@@ -603,11 +686,17 @@ const ActiveCall: React.FC<{
             {/* ─── Bottom call controls ─── */}
             <div className="flex-shrink-0 flex items-center justify-center gap-5 py-4 bg-black/40 backdrop-blur-sm">
                 <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isMuted ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white hover:bg-white/20'
-                        }`}
+                    onClick={toggleListening}
+                    disabled={isLoading || isConnecting}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all relative ${isListening
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/40'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                        } disabled:opacity-30`}
                 >
-                    {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    {isListening && (
+                        <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-50" />
+                    )}
+                    {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
 
                 <button
