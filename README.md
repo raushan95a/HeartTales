@@ -288,10 +288,10 @@ This pulls and runs the `daswer123/xtts-api-server` image, exposing the TTS API 
 
 | Name | Role |
 |------|------|
-| **Jayesh** | Full Stack Developer (React, Node.js) |
-| **Raushan** | AI/ML Engineer (Story & Image Generation) |
-| **Rajan** | UI/UX Designer (Figma, Frontend) |
-| **Satvik** | Product Manager (Vision, Presentation) |
+| **Jayesh Krishna** | Full Stack Developer (React, Node.js) |
+| **Raushan Kumar** | AI/ML Engineer (Story & Image Generation) |
+| **Rajan Jaiswal** | UI/UX Designer (Figma, Frontend) |
+| **Satwik Gupta** | AI/ ML (Vision, PPT) |
 
 ---
 
