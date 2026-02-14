@@ -1,8 +1,8 @@
-# 🌌 StoryVerse AI
+# HeartTales - Turn memories into animated stories
 
 > **Turn your loved ones into characters in AI-generated comic stories — with illustrations, voice narration, and real-time character calls.**
 
-StoryVerse AI is a browser-based storytelling platform that lets you create personalized characters (family, friends, pets) and generate short comic stories featuring them. Every story comes with manga-style illustrations and voice narration — all powered by Google Gemini. You can even "call" your characters and have a live conversation with their AI-driven personalities.
+HeartTales is a browser-based storytelling platform that lets you create personalized characters (family, friends, pets) and generate short comic stories featuring them. Every story comes with manga-style illustrations and voice narration — all powered by Google Gemini. You can even "call" your characters and have a live conversation with their AI-driven personalities.
 
 ---
 
@@ -23,9 +23,9 @@ StoryVerse AI is a browser-based storytelling platform that lets you create pers
 
 ## 🎯 What Does It Do?
 
-![StoryVerse Dashboard](public/screenshots/dashboard.png)
+![HeartTales Dashboard](public/screenshots/dashboard.png)
 
-StoryVerse AI solves a simple but meaningful problem: **keeping emotional bonds strong with the people you care about**, even when life keeps you apart.
+HeartTales solves a simple but meaningful problem: **keeping emotional bonds strong with the people you care about**, even when life keeps you apart.
 
 Instead of sending a regular text or making a phone call, you can:
 
