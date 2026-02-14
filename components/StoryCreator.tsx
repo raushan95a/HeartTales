@@ -141,8 +141,13 @@ export const StoryCreator: React.FC<StoryCreatorProps> = ({
       setStatusText("Finalizing your book...");
       setProgress(100);
 
+      // Safe ID generation
+      const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `story-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       const finalStory: Story = {
-        id: crypto.randomUUID(),
+        id: uniqueId,
         createdAt: Date.now(),
         userProfile: userProfile,
         ...storyBase,

@@ -158,7 +158,7 @@ export default function App() {
                             <div className="flex -space-x-2">
                               {/* Display User Avatar + Characters */}
                               <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold bg-indigo-600 z-10">
-                                {story.userProfile?.name.charAt(0) || 'U'}
+                                {story.userProfile?.name?.charAt(0) || 'U'}
                               </div>
                               {story.characters.slice(0, 2).map((char, i) => (
                                 <div key={i} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs text-white font-bold ${char.avatarColor}`}>

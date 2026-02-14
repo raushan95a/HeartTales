@@ -64,7 +64,7 @@ export const generateStoryFromPrompt = async (
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: inputContext,
+      contents: { parts: [{ text: inputContext }] },
       config: {
         systemInstruction,
         responseMimeType: "application/json",
@@ -147,29 +147,47 @@ export const generateSceneImage = async (visualDescription: string): Promise<str
   const model = "gemini-2.5-flash-image";
   const prompt = `Manga style illustration, black and white or muted colors, dramatic lighting, high quality line art. ${visualDescription}`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        imageConfig: {
-            aspectRatio: "16:9",
-        }
-      }
-    });
+  // Retry logic wrapper
+  const callApi = async (attempt = 1): Promise<string> => {
+    try {
+        const response = await ai.models.generateContent({
+            model,
+            contents: { 
+                parts: [
+                    { text: prompt }
+                ] 
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "16:9",
+                }
+            }
+        });
 
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-        const parts = candidates[0].content.parts;
-        for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0) {
+            const parts = candidates[0].content.parts;
+            for (const part of parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
             }
         }
+        
+        throw new Error("No image data found in response");
+    } catch (e: any) {
+        // Retry on 500 or unknown RPC errors up to 2 times
+        if (attempt < 3 && (e.message?.includes('500') || e.message?.includes('Rpc failed'))) {
+            console.warn(`Image generation failed (attempt ${attempt}). Retrying...`, e.message);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5s
+            return callApi(attempt + 1);
+        }
+        throw e;
     }
-    
-    throw new Error("No image data found in response");
+  };
 
+  try {
+    return await callApi();
   } catch (error) {
     console.error("Error generating image:", error);
     throw error;
@@ -184,7 +202,7 @@ export const generateSpeech = async (text: string, voiceName: string = 'Zephyr')
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: [{ parts: [{ text }] }],
+      contents: { parts: [{ text }] },
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {

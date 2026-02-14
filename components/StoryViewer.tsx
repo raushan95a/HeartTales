@@ -83,6 +83,9 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
     isPlayingAllRef.current = false;
   };
 
+  // Safe access to user profile
+  const userName = story.userProfile?.name || 'Me';
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 bg-slate-50">
       <div className="mb-8 flex items-center justify-between sticky top-0 bg-slate-50/95 backdrop-blur-sm z-20 py-4 border-b border-slate-200 shadow-sm px-4 -mx-4">
@@ -140,8 +143,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({ story, onBack }) => {
                         {scene.dialogue.map((d, i) => {
                             const audioKey = `${sceneIndex}-${i}`;
                             const isPlaying = playingAudioId === audioKey;
-                            // Check against user profile name or 'Me'
-                            const isMe = d.speaker.toLowerCase() === story.userProfile.name.toLowerCase() || d.speaker.toLowerCase() === 'me';
+                            
+                            // Safer check for 'Me'
+                            const speakerName = d.speaker || 'Unknown';
+                            const isMe = 
+                                speakerName.toLowerCase() === userName.toLowerCase() || 
+                                speakerName.toLowerCase() === 'me' ||
+                                speakerName.toLowerCase() === 'i';
 
                             return (
                                 <div 
