@@ -23,6 +23,8 @@ StoryVerse AI is a browser-based storytelling platform that lets you create pers
 
 ## 🎯 What Does It Do?
 
+![StoryVerse Dashboard](public/screenshots/dashboard.png)
+
 StoryVerse AI solves a simple but meaningful problem: **keeping emotional bonds strong with the people you care about**, even when life keeps you apart.
 
 Instead of sending a regular text or making a phone call, you can:
@@ -39,6 +41,8 @@ Everything runs directly in your browser with no backend server needed (except a
 ## ✨ Key Features
 
 ### 🧑‍🤝‍🧑 Character Management
+
+![Character Manager](public/screenshots/character_manager.png)
 - Create characters with a **name, gender, relation** (Mom, Friend, Pet, etc.), **personality traits**, and a **description**
 - Assign unique **avatar colors** and **voice presets** (Puck, Charon, Kore, Fenrir, Zephyr)
 - Edit or delete characters anytime — they persist in your browser's localStorage
@@ -48,6 +52,8 @@ Everything runs directly in your browser with no backend server needed (except a
 - Your name, gender, description, and voice preset are saved and reused across stories
 
 ### 📝 Story Creation
+
+![Story Creator](public/screenshots/story_creator.png)
 - Pick any number of your saved characters
 - Describe a story idea in plain text
 - AI generates a structured **3-scene comic story** with a title, synopsis, narration, and dialogues
@@ -64,6 +70,8 @@ Everything runs directly in your browser with no backend server needed (except a
   - **Browser SpeechSynthesis** — fallback that works out of the box, no setup needed
 
 ### 📞 Character Call (Voice & Text Chat)
+
+![Character Call](public/screenshots/character_call.png)
 - Start a **video-call-style conversation** with any character
 - The character stays **fully in-character** based on their personality traits and relationship to you
 - Supports both:
@@ -77,6 +85,8 @@ Everything runs directly in your browser with no backend server needed (except a
 - Click any card to open the full story viewer
 
 ### 📖 Story Viewer
+
+![Story Viewer](public/screenshots/story_viewer.png)
 - Comic-panel layout with narration and dialogue bubbles
 - Play individual lines of dialogue or read the whole story
 - Auto-scrolls through scenes during playback
