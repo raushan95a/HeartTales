@@ -1,449 +1,308 @@
-# HeartTales
+# 🌌 StoryVerse AI
 
-HeartTales is an innovative web platform that bridges emotional distances by turning your loved ones into characters in personalized, AI-generated comic stories. Perfect for families separated by distance, preserving memories, or simply creating magical moments together.
+> **Turn your loved ones into characters in AI-generated comic stories — with illustrations, voice narration, and real-time character calls.**
 
-This repository is the current MVP: a single-page React app that runs fully in the browser, generates short comic stories with Gemini, and stores everything in localStorage.
+StoryVerse AI is a browser-based storytelling platform that lets you create personalized characters (family, friends, pets) and generate short comic stories featuring them. Every story comes with manga-style illustrations and voice narration — all powered by Google Gemini. You can even "call" your characters and have a live conversation with their AI-driven personalities.
 
-## 🌟 The Problem We're Solving
+---
 
-In today's world:
+## 📖 Table of Contents
 
-- 70% of families live apart due to work, education, or other commitments
-- Emotional distance grows with physical separation
-- Traditional communication (texts, calls) often feels insufficient for maintaining deep connections
-- Precious memories fade without a creative way to preserve and relive them
+- [What Does It Do?](#-what-does-it-do)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [How It Works Under the Hood](#-how-it-works-under-the-hood)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Benefits](#-benefits)
+- [Team](#-team)
+- [License](#-license)
 
-HeartTales helps you keep emotional bonds strong by transforming everyday moments and cherished memories into beautiful, shareable visual stories.
+---
 
-## ✅ Current MVP Features (This Repo)
+## 🎯 What Does It Do?
 
-- Profile onboarding
-   - Capture the main protagonist (you) with name, gender, description, and a voice preset.
-   - Stored locally and reused for future stories.
-- Character management
-   - Add, edit, and delete supporting characters with traits, relation tags, and avatar colors.
-   - Voice presets per character to drive distinct audio in dialogue.
-- Story creation flow
-   - Select any number of characters and provide a story idea prompt.
-   - Validates inputs and shows progress while generating.
-- AI story generation
-   - Uses Gemini to create a 3-scene comic story (title, synopsis, narration, dialogue).
-   - Enforces short, structured outputs for consistent formatting.
-- Scene illustration
-   - Generates a manga-style image for each scene.
-   - Handles partial failures gracefully when an image cannot be created.
-- Voice narration and dialogue
-   - Generates audio per dialogue line using voice presets.
-   - Sequential audio generation with backoff to avoid rate limits.
-- Story dashboard
-   - Cards show synopsis, creation date, and cast avatars.
-   - Click to open and read a story.
-- Story viewer
-   - Comic-panel layout with narration and dialogue bubbles.
-   - Play a single line or read the entire story with auto-scroll.
-- Local persistence
-   - Characters, stories, and user profile are stored in localStorage and restored on load.
+StoryVerse AI solves a simple but meaningful problem: **keeping emotional bonds strong with the people you care about**, even when life keeps you apart.
 
-## ✨ Core Features (Product Vision)
+Instead of sending a regular text or making a phone call, you can:
 
-These sections describe the longer-term product vision and future scope. Items marked as "Planned" are not yet implemented in this repo.
+1. **Create characters** based on your real family members or friends (name, personality, relationship)
+2. **Write a story idea** like *"Mom and I bake a cake together for Dad's birthday"*
+3. **Let AI generate a full comic story** — with scenes, dialogue, illustrations, and voice narration
+4. **Call your characters** — have a real-time voice/text conversation with them, as if they're right there
 
-### 1. 📋 Character Dashboard (Planned)
+Everything runs directly in your browser with no backend server needed (except an optional Docker container for high-quality TTS).
 
-Create and manage your personal cast of characters.
+---
 
-What it does:
+## ✨ Key Features
 
-- Add family members, friends, or pets as characters
-- Upload reference photos for each character
-- Define personality traits, relationships, and backstories
-- Organize your character library with easy search and filters
+### 🧑‍🤝‍🧑 Character Management
+- Create characters with a **name, gender, relation** (Mom, Friend, Pet, etc.), **personality traits**, and a **description**
+- Assign unique **avatar colors** and **voice presets** (Puck, Charon, Kore, Fenrir, Zephyr)
+- Edit or delete characters anytime — they persist in your browser's localStorage
 
-Technical Implementation:
+### 👤 User Profile (Protagonist)
+- Set up your own profile as the **main protagonist** of every story
+- Your name, gender, description, and voice preset are saved and reused across stories
 
-- Secure user authentication and profile management
-- Cloud storage for character images (S3/Cloudinary)
-- PostgreSQL/MongoDB database for character metadata
-- Character consistency engine for visual continuity
+### 📝 Story Creation
+- Pick any number of your saved characters
+- Describe a story idea in plain text
+- AI generates a structured **3-scene comic story** with a title, synopsis, narration, and dialogues
 
-Privacy & Safety:
+### 🎨 Manga-Style Scene Illustrations
+- Each scene gets an AI-generated **manga-style illustration** (black & white, dramatic lighting, high-quality line art)
+- Images are generated in **16:9 aspect ratio** for a cinematic comic feel
+- If an image fails to generate, the story still works — it handles errors gracefully
 
-- All character data is private by default
-- Consent checkboxes for using real people's images
-- User controls for data deletion and export
-- No sharing without explicit permission
+### 🔊 Voice Narration & Dialogue
+- Every line of dialogue can be **spoken aloud** using text-to-speech
+- Two TTS options:
+  - **Coqui XTTS** (via Docker) — high-quality, neural voice cloning
+  - **Browser SpeechSynthesis** — fallback that works out of the box, no setup needed
 
-### 2. ✍️ AI Story Generation Engine (Partially Implemented)
+### 📞 Character Call (Voice & Text Chat)
+- Start a **video-call-style conversation** with any character
+- The character stays **fully in-character** based on their personality traits and relationship to you
+- Supports both:
+  - **Text chat** — type messages and get responses
+  - **Voice input** — speak using your microphone (browser Speech Recognition), and the character replies with synthesized voice
+- Includes a 3D animated avatar with speaking animations and call timer
 
-Create personalized stories featuring your characters in any scenario.
+### 📚 Story Dashboard
+- View all your created stories in a card layout
+- Each card shows the **title, synopsis, creation date**, and **character avatars**
+- Click any card to open the full story viewer
 
-What it does:
+### 📖 Story Viewer
+- Comic-panel layout with narration and dialogue bubbles
+- Play individual lines of dialogue or read the whole story
+- Auto-scrolls through scenes during playback
 
-- Select characters from your dashboard
-- Choose from story templates (kitchen scene, park outing, birthday party, adventure, etc.)
-- AI generates contextual narratives with natural dialogues
-- Stories are structured into 5-6 scenes/pages
-- Edit and refine stories before visualization
+### 💾 Local Persistence
+- Everything is stored in **localStorage** — characters, stories, and your profile
+- No account or server required — your data stays on your device
 
-How it works:
-
-User Input → Character Selection + Scene Template
-       ↓
-AI Story Engine (GPT-4/Claude)
-       ↓
-Structured Story Output (JSON)
-{
-   "scenes": [
-      {
-         "setting": "Kitchen",
-         "characters": ["Mom", "Brother"],
-         "dialogue": [...],
-         "emotions": [...]
-      }
-   ]
-}
-
-Technical Details:
-
-- LLM-powered story generation with custom prompt templates
-- Character personality integration for authentic interactions
-- Content safety filters and moderation
-- Story versioning and editing capabilities
-
-User Experience:
-
-- Intuitive scene selection interface
-- Real-time story preview
-- One-click regeneration if unsatisfied
-- Save and organize story library
-
-### 3. 🎨 Comic-Style Image Generation (Partially Implemented)
-
-Transform written stories into beautiful illustrated comic panels.
-
-What it does:
-
-- Converts each story scene into comic-book style images
-- Characters appear visually consistent across panels
-- Speech bubbles display character dialogues
-- Thought bubbles show internal emotions
-- Dynamic backgrounds match the scene setting
-
-Visual Style:
-
-- Hand-drawn aesthetic with bold outlines
-- Vibrant, warm color palette
-- Comic panel layouts with perspective
-- Expressive character poses and emotions
-- Professional comic typography
-
-Technical Pipeline:
-
-Story JSON → Image Generation Model (Stable Diffusion/DALL-E)
-       ↓
-Character Reference Images + Style Prompts
-       ↓
-Panel Layout Engine
-       ↓
-Speech Bubble Overlay System
-       ↓
-Final Comic Page (High-Res PNG)
-
-Advanced Features:
-
-- Character embedding for visual consistency
-- Style transfer options (anime, Pixar, realistic, etc.)
-- Custom color palettes
-- Panel layout customization
-- Export as PDF or image gallery
-
-### 4. 🎬 Story-to-Video Conversion (Future Scope)
-
-Bring your comic stories to life with animated videos.
-
-What it does:
-
-- Converts static comic panels into animated sequences
-- Adds smooth transitions between scenes
-- Text-to-speech narration for character voices
-- Background music and sound effects
-- Export as MP4 video
-
-Planned Features:
-
-- Character lip-sync animation
-- Camera pan and zoom effects
-- Custom voice selection for each character
-- Scene transition effects (fade, slide, zoom)
-- Video duration: 1-3 minutes per story
-
-Technical Approach:
-
-- Image-to-video models (RunwayML, Pika Labs)
-- TTS engines (ElevenLabs, Google Cloud TTS)
-- Video editing SDK (FFmpeg)
-- Background music library integration
-
-Use Cases:
-
-- Share on social media
-- Create video greetings
-- Preserve family stories for future generations
-- Educational storytelling for children
-
-### 5. 💬 Avatar-Based Interaction (Future Scope)
-
-Have real-time conversations with AI avatars of your characters.
-
-What it does:
-
-- Video call-style interface with character avatars
-- AI-powered conversations mimicking character personalities
-- Realistic facial expressions and gestures
-- Voice synthesis matching uploaded voice samples
-- Emotional AI responses based on conversation context
-
-Ethical Framework:
-
-- Explicit consent required for avatar creation
-- Clear disclaimers that avatars are AI-generated
-- Strict privacy controls (no sharing without permission)
-- Prevention of deepfake misuse
-- Age verification for certain features
-- User can delete avatars at any time
-
-Technical Design:
-
-- Avatar generation from reference photos (D-ID, HeyGen API)
-- Conversational AI backend (GPT-4/Claude)
-- Real-time voice cloning (ElevenLabs)
-- Emotion detection and response generation
-- WebRTC for video streaming
-
-Safety Guardrails:
-
-- Content moderation for inappropriate requests
-- Rate limiting to prevent abuse
-- Watermarking on generated content
-- Audit logs for compliance
-- Legal disclaimers and terms of service
+---
 
 ## 🛠️ Tech Stack
 
-### Current (This Repo)
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend Framework** | React 19 + TypeScript | Component-based UI with type safety |
+| **Build Tool** | Vite 6 | Lightning-fast dev server and optimized production builds |
+| **Styling** | Tailwind CSS (via CDN) | Utility-first CSS for rapid, responsive UI development |
+| **Typography** | Google Fonts (Inter, Comic Neue) | Clean UI text (Inter) and comic-style text (Comic Neue) |
+| **Icons** | Lucide React | Beautiful, consistent SVG icon library |
+| **AI — Story Generation** | Google Gemini (`gemini-3-flash-preview`) | Generates structured 3-scene comic stories as JSON |
+| **AI — Image Generation** | Google Gemini (`gemini-2.5-flash-image`) | Creates manga-style scene illustrations from text prompts |
+| **AI — Character Chat** | Google Gemini (`gemini-2.5-flash`) | Powers the real-time character roleplay conversations |
+| **TTS — High Quality** | Coqui XTTS (via Docker) | Neural text-to-speech with voice cloning capabilities |
+| **TTS — Fallback** | Browser SpeechSynthesis API | Built-in browser TTS, works without any setup |
+| **Voice Input** | Browser SpeechRecognition API | Captures user voice during character calls |
+| **Data Storage** | Browser localStorage | Persists characters, stories, and profiles locally |
+| **Containerization** | Docker + Docker Compose | Runs the XTTS voice server as a container |
 
-- React 19 + TypeScript
-- Vite 6
-- Tailwind via CDN
-- Google Gemini APIs for text, image, and speech
-- lucide-react icons
+---
 
-### Proposed Production Stack (Vision)
+## ⚙️ How It Works Under the Hood
 
-Frontend
+### 1. Story Generation Pipeline
 
-- Framework: React.js / Next.js 14
-- Styling: TailwindCSS + Shadcn UI
-- State Management: Zustand / Redux Toolkit
-- Animation: Framer Motion
-- Forms: React Hook Form + Zod validation
+```
+You write a story idea
+        ↓
+Gemini 3 Flash Preview generates a structured JSON:
+  { title, synopsis, scenes: [{ visual_description, narration, dialogue }] }
+        ↓
+Each scene's visual_description → Gemini 2.5 Flash Image → manga illustration
+        ↓
+Each dialogue line → XTTS or Browser TTS → audio narration
+        ↓
+Everything assembled into a comic-panel story viewer
+```
 
-Backend
+### 2. Character Call Flow
 
-- API: Node.js + Express / FastAPI (Python)
-- Authentication: NextAuth.js / Clerk
-- Database: PostgreSQL (user data) + MongoDB (stories/images)
-- File Storage: AWS S3 / Cloudinary
-- Caching: Redis
+```
+You select a character → "Call" starts
+        ↓
+You speak (microphone) or type a message
+        ↓
+Browser SpeechRecognition converts your voice → text
+        ↓
+Text + chat history → Gemini 2.5 Flash (roleplay mode) → character response
+        ↓
+Response → Browser SpeechSynthesis → character "speaks" back
+        ↓
+3D avatar animates lip-sync while speaking
+```
 
-AI & ML
+### 3. Coqui XTTS (Docker TTS)
 
-- Story Generation: OpenAI GPT-4 / Anthropic Claude
-- Image Generation: Stable Diffusion XL / DALL-E 3
-- Character Consistency: LoRA fine-tuning / IP-Adapter
-- Video Generation: RunwayML Gen-2 / Pika Labs (Future)
-- Avatar Creation: D-ID / HeyGen API (Future)
-- Voice Synthesis: ElevenLabs / Google Cloud TTS (Future)
+The `docker-compose.yml` runs the [Coqui XTTS API Server](https://github.com/daswer123/xtts-api-server) for neural text-to-speech:
 
-DevOps & Deployment
+```yaml
+services:
+  xtts:
+    image: daswer123/xtts-api-server
+    ports:
+      - "5002:8020"     # Accessible at http://localhost:5002
+    volumes:
+      - ./xtts-data:/app/tts   # Mount speaker voice samples
+    environment:
+      - COQUI_TOS_AGREED=1
+```
 
-- Hosting: Vercel (Frontend) + AWS EC2/Lambda (Backend)
-- Containerization: Docker + Docker Compose
-- CI/CD: GitHub Actions
-- Monitoring: Sentry + LogRocket
-- Analytics: Google Analytics / Mixpanel
+> **Note:** This is optional. If the Docker container isn't running, the app falls back to the browser's built-in SpeechSynthesis API.
 
-## 🎯 MVP Scope (Hackathon Build)
+---
 
-✅ Must-Have Features (12-hour build)
+## 📁 Project Structure
 
-- User authentication (email/Google)
-- Character creation (name, relation, photo, description)
-- Story generation with AI (text-based)
-- Single comic panel generation (1 scene visualization)
-- Basic dashboard UI
+```
+storyverse-ai/
+├── index.html              # Entry HTML — loads Tailwind CDN, Google Fonts, and React
+├── index.tsx               # React DOM render entry point
+├── App.tsx                 # Main app component — routing, state management, localStorage
+├── types.ts                # TypeScript interfaces (Character, Story, Scene, UserProfile, etc.)
+│
+├── components/
+│   ├── Button.tsx          # Reusable button component with variants
+│   ├── CharacterManager.tsx  # Create, edit, and delete characters + user profile setup
+│   ├── CharacterCard.tsx   # Individual character display card
+│   ├── StoryCreator.tsx    # Story creation form — select characters, enter prompt, generate
+│   ├── StoryViewer.tsx     # Comic-panel story reader with audio playback
+│   └── CharacterCall.tsx   # Voice/text call UI — 3D avatar, speech recognition, chat
+│
+├── services/
+│   └── geminiService.ts    # All AI integrations — story gen, image gen, TTS, character chat
+│
+├── docker-compose.yml      # Docker config for Coqui XTTS voice server
+├── xtts-data/              # Volume mount for XTTS speaker voice samples
+│
+├── vite.config.ts          # Vite configuration — env vars, path aliases, dev server
+├── tsconfig.json           # TypeScript compiler configuration
+├── package.json            # Dependencies and scripts
+├── metadata.json           # Project metadata (name, description)
+├── .env.local              # Environment variables (API keys — not committed)
+└── .gitignore              # Git ignore rules
+```
 
-🔄 Nice-to-Have (if time permits)
-
-- Multi-page comic generation (3-5 panels)
-- Story editing interface
-- Export as PDF
-- Mobile-responsive design
-
-🚀 Future Scope (post-hackathon)
-
-- Video conversion
-- Avatar interactions
-- Voice cloning
-- Multi-language support
-- Collaborative story building
-- AR integration
-
-## 📊 Impact & Use Cases
-
-Personal & Family
-
-- Reconnect with distant family members
-- Preserve grandparent stories for future generations
-- Create bedtime stories featuring your children
-- Share visual memories with loved ones
-
-Education
-
-- Interactive storytelling for children
-- Language learning through visual narratives
-- Cultural heritage preservation
-- Creative writing assistance
-
-Therapy & Wellness
-
-- Memory preservation for dementia patients
-- Emotional expression through storytelling
-- Grief counseling support
-- Building empathy through perspective-taking
-
-Entertainment
-
-- Fan fiction visualization
-- Collaborative story creation
-- Social media content generation
-- Digital scrapbooking
-
-## 🔒 Privacy & Safety (Vision)
-
-Data Protection
-
-- End-to-end encryption for user data
-- GDPR and CCPA compliant
-- Right to deletion and data export
-- No third-party data sharing
-
-Content Moderation
-
-- AI-powered safety filters
-- User reporting system
-- Age-appropriate content guidelines
-- Prohibited content policies
-
-Ethical AI Use
-
-- Transparent AI disclosure
-- Bias mitigation in story generation
-- Consent-based image usage
-- Anti-deepfake measures
+---
 
 ## 🚀 Getting Started
 
-### Local Dev (This Repo)
+### Prerequisites
 
-**Prerequisites:** Node.js
+- **Node.js** (v18 or later)
+- **A Google Gemini API key** — [Get one here](https://aistudio.google.com/apikey)
+- **Docker** (optional, only needed for high-quality XTTS voice synthesis)
 
-1. Install dependencies:
-    `npm install`
-2. Create `.env.local` and set your API key:
-    `GEMINI_API_KEY=your_key_here`
-3. Start the dev server:
-    `npm run dev`
+### 1. Clone the Repository
 
-### Full-Stack Setup (Concept)
+```bash
+git clone https://github.com/Jayesh-Kr/StoryVerse.git
+cd storyverse-ai
+```
 
-Prerequisites
+### 2. Install Dependencies
 
-- Node.js >= 18.x
-- Python >= 3.9 (for AI backend)
-- PostgreSQL >= 14
-- Redis >= 7.0
-
-Installation
-
-# Clone the repository
-git clone https://github.com/your-team/storyverse-ai.git
-
-# Install frontend dependencies
-cd frontend
+```bash
 npm install
+```
 
-# Install backend dependencies
-cd ../backend
-npm install
-# or for Python backend
-pip install -r requirements.txt
+### 3. Set Up Environment Variables
 
-# Set up environment variables
-cp .env.example .env
-# Add your API keys (OpenAI, AWS, etc.)
+Create a `.env.local` file in the project root:
 
-# Run database migrations
-npm run migrate
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+VITE_TTS_API_URL=http://localhost:5002
+```
 
-# Start development servers
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | ✅ Yes | Your Google Gemini API key for story, image, and chat generation |
+| `VITE_TTS_API_URL` | ❌ Optional | URL of the Coqui XTTS Docker server (defaults to `http://localhost:5002`) |
+
+### 4. Start the Dev Server
+
+```bash
 npm run dev
+```
 
-Environment Variables
+The app will be running at **http://localhost:3000**.
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/storyverse
-REDIS_URL=redis://localhost:6379
+### 5. (Optional) Start the XTTS Voice Server
 
-# Authentication
-NEXTAUTH_SECRET=your-secret-key
-NEXTAUTH_URL=http://localhost:3000
+If you want high-quality neural TTS instead of browser speech synthesis:
 
-# AI Services
-OPENAI_API_KEY=sk-...
-STABILITY_API_KEY=sk-...
+```bash
+docker compose up -d
+```
 
-# Storage
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-S3_BUCKET_NAME=storyverse-media
+This pulls and runs the `daswer123/xtts-api-server` image, exposing the TTS API on port **5002**.
+
+---
+
+## 🌍 Benefits
+
+### For Families & Relationships
+- **Bridge emotional distance** — create stories featuring your loved ones, no matter how far apart you are
+- **Preserve memories** — turn real moments into illustrated comic stories you can revisit anytime
+- **Personalized bedtime stories** — generate unique stories starring your kids, complete with illustrations and narration
+
+### For Creativity & Entertainment
+- **Zero artistic skill needed** — AI handles the illustrations, writing, and voice acting
+- **Infinite story possibilities** — any idea, any characters, any scenario
+- **Interactive characters** — actually talk to your story characters through voice calls
+
+### For Education
+- **Visual storytelling** — helps children engage with stories through comic-style panels
+- **Language practice** — hear stories narrated aloud with AI-generated speech
+- **Creative writing aid** — use AI as a co-writer to explore story ideas
+
+### Technical Benefits
+- **No backend required** — runs entirely in the browser (except optional Docker TTS)
+- **Privacy-first** — all data stays in your browser's localStorage, nothing is sent to external servers (beyond the Gemini API calls)
+- **Free to use** — powered by Gemini's free-tier API
+- **Lightweight** — minimal dependencies, fast load times, no database setup
+- **Offline-friendly storage** — your characters and stories persist even after closing the browser
+
+---
 
 ## 👥 Team
 
-- [Jayesh] - Full Stack Developer (React, Node.js)
-- [Raushan] - AI/ML Engineer (Story & Image Generation)
-- [Rajan] - UI/UX Designer (Figma, Frontend)
-- [Satvik] - Product Manager (Vision, Presentation)
+| Name | Role |
+|------|------|
+| **Jayesh** | Full Stack Developer (React, Node.js) |
+| **Raushan** | AI/ML Engineer (Story & Image Generation) |
+| **Rajan** | UI/UX Designer (Figma, Frontend) |
+| **Satvik** | Product Manager (Vision, Presentation) |
 
-## 📞 Contact & Links
-
-- Demo: heartTales.vercel.app
-- GitHub: github.com/your-team/heartTales
-- Email: team@hertTales
-- Presentation: View Slides
+---
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## 🙏 Acknowledgments
 
-- OpenAI for GPT-4 API
-- Stability AI for Stable Diffusion
-- Anthropic for Claude API
-- All hackathon mentors and judges
+- **Google Gemini** — for powering story generation, image creation, and character conversations
+- **Coqui TTS / XTTS** — for high-quality open-source text-to-speech
+- **Lucide** — for the beautiful icon set
+- **Vite** — for the blazing-fast development experience
 
-## Notes
+---
 
-- The app reads `GEMINI_API_KEY` via Vite define at build time.
-- Audio playback uses the browser AudioContext; some browsers require a user gesture.
+## 📝 Notes
+
+- The app reads `GEMINI_API_KEY` from `.env.local` via Vite's `define` config at build time.
+- Audio playback uses the browser's `AudioContext` — some browsers require a user gesture (click/tap) before playing audio.
+- The character call feature uses the browser's `SpeechRecognition` API, which works best in **Chromium-based browsers** (Chrome, Edge, Brave).
+- If the XTTS Docker container is not running, voice narration in stories will not work, but the character call feature will still use browser TTS as a fallback.
